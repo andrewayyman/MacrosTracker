@@ -1,9 +1,12 @@
 using GymScan.API.Middleware;
 using GymScan.API.Services;
 using GymScan.Database;
+using GymScan.Database.Data;
+using GymScan.Database.Seeds;
 using GymScan.Services;
 using GymScan.Services.Common.Interfaces;
 using GymScan.Services.Configuration;
+using GymScan.Services.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -35,6 +38,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddDatabase(builder.Configuration);
 builder.Services.AddApplicationServices();
+builder.Services.AddHttpClient<IFoodVisionService, GeminiFoodVisionService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -73,6 +77,7 @@ var app = builder.Build();
 
 app.UseSerilogRequestLogging();
 app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthentication();
@@ -86,6 +91,13 @@ app.MapScalarApiReference("/docs", options =>
     options.Theme = ScalarTheme.Mars;
     options.OpenApiRoutePattern = "/openapi/{documentName}.json";
 });
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasherService>();
+    await DatabaseSeedRunner.SeedAsync(db, hasher.HashPassword);
+}
 
 app.Run();
 

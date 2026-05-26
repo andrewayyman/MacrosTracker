@@ -1,6 +1,5 @@
 <Solution>
   <Project Path="src/GymScan.API/GymScan.API.csproj" />
   <Project Path="src/GymScan.Database/GymScan.Database.csproj" />
-  <Project Path="src/GymScan.Repository/GymScan.Repository.csproj" />
   <Project Path="src/GymScan.Services/GymScan.Services.csproj" />
 </Solution>

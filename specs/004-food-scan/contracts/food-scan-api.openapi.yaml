@@ -1,0 +1,364 @@
+openapi: 3.0.3
+info:
+  title: GymScan – Food Scan API
+  version: "1.0"
+  description: Endpoints for AI photo food analysis, manual food search, and meal diary logging.
+
+servers:
+  - url: http://localhost:5000
+    description: Local development
+
+security:
+  - BearerAuth: []
+
+paths:
+
+  /api/FoodScan/Analyze:
+    post:
+      summary: Upload a food photo for AI analysis
+      description: |
+        Accepts an image file upload. Validates size (≤10 MB) and file type (magic bytes).
+        Sends the image to the Gemini vision service, then checks the local food database
+        for a verified match. Returns a scan result card with macros and result source.
+      operationId: analyzeFood
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Food photo (JPEG, PNG, WebP, GIF; max 10 MB)
+      responses:
+        "200":
+          description: Scan result returned (may be low-confidence if food not identified)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseFoodScanResult"
+        "400":
+          description: File validation failed (wrong type, too large, or no file provided)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          description: AI service unavailable; manual search fallback is offered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseError"
+
+  /api/FoodScan/Log:
+    post:
+      summary: Log a meal to today's diary
+      description: |
+        Confirms a scan result or manual food search selection as a diary entry.
+        Creates a MealLog record attributed to today's date.
+        Optionally links the log to the originating FoodScan or LocalFoodItem.
+      operationId: logMeal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogMealRequest"
+      responses:
+        "201":
+          description: Meal logged successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseMealLog"
+        "400":
+          description: Validation error (missing required field, invalid meal type, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/FoodScan/Search:
+    get:
+      summary: Search the local food database by name
+      description: |
+        Case-insensitive substring search across LocalFoodItem.Name and AlternateNames.
+        Returns up to 20 results. Used as the manual food entry fallback.
+      operationId: searchFood
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 100
+          description: Search term (e.g. "koshary", "ful", "طعمية")
+      responses:
+        "200":
+          description: List of matching food items (may be empty)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseFoodSearchList"
+        "400":
+          description: Query is missing or invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseError"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid JWT bearer token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ServiceResponseError"
+
+  schemas:
+
+    # ──────────────── Request bodies ────────────────
+
+    LogMealRequest:
+      type: object
+      required:
+        - foodName
+        - calories
+        - protein
+        - carbs
+        - fat
+        - mealType
+      properties:
+        foodName:
+          type: string
+          maxLength: 200
+          example: "Koshary — Medium portion"
+        calories:
+          type: number
+          format: double
+          example: 520
+        protein:
+          type: number
+          format: double
+          example: 18
+        carbs:
+          type: number
+          format: double
+          example: 92
+        fat:
+          type: number
+          format: double
+          example: 11
+        servingSizeGrams:
+          type: number
+          format: double
+          nullable: true
+          example: 380
+        mealType:
+          $ref: "#/components/schemas/MealType"
+        foodScanId:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the originating FoodScan (null for manual search logs)
+        localFoodItemId:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the matched LocalFoodItem (null for AI-only results)
+
+    # ──────────────── Response DTOs ────────────────
+
+    FoodScanResultDto:
+      type: object
+      properties:
+        scanId:
+          type: string
+          format: uuid
+        foodName:
+          type: string
+          example: "Koshary — Medium portion"
+        calories:
+          type: number
+          format: double
+          example: 520
+        protein:
+          type: number
+          format: double
+          example: 18
+        carbs:
+          type: number
+          format: double
+          example: 92
+        fat:
+          type: number
+          format: double
+          example: 11
+        servingSizeGrams:
+          type: number
+          format: double
+          nullable: true
+          example: 380
+        resultSource:
+          $ref: "#/components/schemas/ResultSource"
+        confidencePercent:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+          example: 87
+        notes:
+          type: string
+          nullable: true
+          example: "Mixed dish — estimate may vary"
+        localFoodItemId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Set when resultSource is Verified
+
+    MealLogDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        diaryDate:
+          type: string
+          format: date
+          example: "2026-05-26"
+        mealType:
+          $ref: "#/components/schemas/MealType"
+        foodName:
+          type: string
+          example: "Koshary — Medium portion"
+        calories:
+          type: number
+          format: double
+        protein:
+          type: number
+          format: double
+        carbs:
+          type: number
+          format: double
+        fat:
+          type: number
+          format: double
+        servingSizeGrams:
+          type: number
+          format: double
+          nullable: true
+        loggedAt:
+          type: string
+          format: date-time
+
+    FoodSearchResultDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: "Ful Medames"
+        caloriesPerServing:
+          type: number
+          format: double
+        proteinPerServing:
+          type: number
+          format: double
+        carbsPerServing:
+          type: number
+          format: double
+        fatPerServing:
+          type: number
+          format: double
+        servingSizeGrams:
+          type: number
+          format: double
+
+    # ──────────────── Enums ────────────────
+
+    MealType:
+      type: string
+      enum: [Breakfast, Lunch, Dinner, Snack]
+      example: Lunch
+
+    ResultSource:
+      type: string
+      enum: [AiEstimate, Verified]
+      example: Verified
+
+    # ──────────────── Standard envelope ────────────────
+
+    ServiceResponseFoodScanResult:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/FoodScanResultDto"
+        message:
+          type: string
+          example: "Food analyzed successfully."
+        errorList:
+          type: array
+          items:
+            type: string
+
+    ServiceResponseMealLog:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/MealLogDto"
+        message:
+          type: string
+          example: "Meal logged successfully."
+        errorList:
+          type: array
+          items:
+            type: string
+
+    ServiceResponseFoodSearchList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/FoodSearchResultDto"
+        message:
+          type: string
+          example: "Search completed."
+        errorList:
+          type: array
+          items:
+            type: string
+
+    ServiceResponseError:
+      type: object
+      properties:
+        data:
+          nullable: true
+        message:
+          type: string
+          example: "File type not supported."
+        errorList:
+          type: array
+          items:
+            type: string

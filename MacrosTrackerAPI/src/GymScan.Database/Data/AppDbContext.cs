@@ -20,6 +20,12 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<DailyNutritionGoal> DailyNutritionGoals => Set<DailyNutritionGoal>();
 
+    public DbSet<LocalFoodItem> LocalFoodItems => Set<LocalFoodItem>();
+
+    public DbSet<FoodScan> FoodScans => Set<FoodScan>();
+
+    public DbSet<MealLog> MealLogs => Set<MealLog>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
