@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GymScan.API/GymScan.API.csproj" />
+    <Project Path="src/GymScan.Application/GymScan.Application.csproj" />
+    <Project Path="src/GymScan.Domain/GymScan.Domain.csproj" />
+    <Project Path="src/GymScan.Infrastructure/GymScan.Infrastructure.csproj" />
+  </Folder>
+</Solution>

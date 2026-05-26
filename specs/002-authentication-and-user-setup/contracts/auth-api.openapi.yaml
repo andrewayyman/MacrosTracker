@@ -1,0 +1,284 @@
+openapi: 3.0.3
+info:
+  title: GymScan Authentication API
+  version: 1.0.0
+  description: Contract for account registration, sign-in, session renewal, logout, and current-user lookup.
+servers:
+  - url: http://localhost:5101
+paths:
+  /api/auth/register:
+    post:
+      summary: Register a new user account
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Account created and signed in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthEnvelope'
+        '400':
+          description: Validation failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /api/auth/login:
+    post:
+      summary: Authenticate an existing user
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful sign-in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthEnvelope'
+        '400':
+          description: Validation failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /api/auth/refresh:
+    post:
+      summary: Renew an authenticated session
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Session renewed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthEnvelope'
+        '401':
+          description: Invalid or expired renewal credential
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /api/auth/logout:
+    post:
+      summary: Revoke the current signed-in session
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Session revoked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageEnvelope'
+        '401':
+          description: Authentication required or session no longer valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /api/auth/me:
+    get:
+      summary: Get the current signed-in user's account summary
+      tags: [Authentication]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user account summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserEnvelope'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [firstName, email, password]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    LogoutRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          description: Optional explicit renewal credential to revoke alongside the current authenticated session
+    AuthEnvelope:
+      type: object
+      required: [data, message, errorList]
+      properties:
+        data:
+          $ref: '#/components/schemas/AuthResponse'
+        message:
+          type: string
+          example: Signed in successfully.
+        errorList:
+          type: array
+          items:
+            type: string
+          example: []
+    UserEnvelope:
+      type: object
+      required: [data, message, errorList]
+      properties:
+        data:
+          $ref: '#/components/schemas/UserSummary'
+        message:
+          type: string
+          example: Current user loaded successfully.
+        errorList:
+          type: array
+          items:
+            type: string
+          example: []
+    MessageEnvelope:
+      type: object
+      required: [data, message, errorList]
+      properties:
+        data:
+          type: object
+          required: [value]
+          properties:
+            value:
+              type: string
+        message:
+          type: string
+          example: Signed out successfully.
+        errorList:
+          type: array
+          items:
+            type: string
+          example: []
+    ErrorEnvelope:
+      type: object
+      required: [data, message, errorList]
+      properties:
+        data:
+          nullable: true
+        message:
+          type: string
+          example: Validation failed.
+        errorList:
+          type: array
+          items:
+            type: string
+    AuthResponse:
+      type: object
+      required:
+        - accessToken
+        - accessTokenExpiresAtUtc
+        - refreshToken
+        - refreshTokenExpiresAtUtc
+        - user
+      properties:
+        accessToken:
+          type: string
+        accessTokenExpiresAtUtc:
+          type: string
+          format: date-time
+        refreshToken:
+          type: string
+        refreshTokenExpiresAtUtc:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/UserSummary'
+    UserSummary:
+      type: object
+      required:
+        - id
+        - email
+        - firstName
+        - setupStatus
+        - isAuthenticated
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+          nullable: true
+        setupStatus:
+          type: string
+          enum:
+            - AccountCreated
+            - ProfilePending
+            - ProfileCompleted
+        isAuthenticated:
+          type: boolean

@@ -1,0 +1,16 @@
+bin/
+obj/
+*.user
+*.suo
+packages/
+node_modules/
+dist/
+build/
+*.log
+.env*
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
