@@ -3,6 +3,26 @@
   "WorkspaceRootPath": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|c:\\users\\andrew.onsy\\andrew\\macrostracker\\macrostrackerapi\\src\\gymscan.api\\services\\currentuserservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|solutionrelative:src\\gymscan.api\\services\\currentuserservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|c:\\users\\andrew.onsy\\andrew\\macrostracker\\macrostrackerapi\\src\\gymscan.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|solutionrelative:src\\gymscan.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|c:\\users\\andrew.onsy\\andrew\\macrostracker\\macrostrackerapi\\src\\gymscan.api\\controllers\\base\\apicontrollerbase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|solutionrelative:src\\gymscan.api\\controllers\\base\\apicontrollerbase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|c:\\users\\andrew.onsy\\andrew\\macrostracker\\macrostrackerapi\\src\\gymscan.api\\middleware\\globalexceptionmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|solutionrelative:src\\gymscan.api\\middleware\\globalexceptionmiddleware.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|c:\\users\\andrew.onsy\\andrew\\macrostracker\\macrostrackerapi\\src\\gymscan.api\\attributes\\appauthorizeattribute.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|solutionrelative:src\\gymscan.api\\attributes\\appauthorizeattribute.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{2A451D23-D12A-1148-AAB8-281F1F909B41}|src\\GymScan.Database\\GymScan.Database.csproj|c:\\users\\andrew.onsy\\andrew\\macrostracker\\macrostrackerapi\\src\\gymscan.database\\abstractions\\auditableentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{2A451D23-D12A-1148-AAB8-281F1F909B41}|src\\GymScan.Database\\GymScan.Database.csproj|solutionrelative:src\\gymscan.database\\abstractions\\auditableentity.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -13,10 +33,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|c:\\users\\andrew.onsy\\andrew\\macrostracker\\macrostrackerapi\\src\\gymscan.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|solutionrelative:src\\gymscan.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|c:\\users\\andrew.onsy\\andrew\\macrostracker\\macrostrackerapi\\src\\gymscan.api\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{861F4DEC-0328-966C-1102-676BA12F4834}|src\\GymScan.API\\GymScan.API.csproj|solutionrelative:src\\gymscan.api\\appsettings.development.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -59,19 +75,84 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "CurrentUserService.cs",
+              "DocumentMoniker": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Services\\CurrentUserService.cs",
+              "RelativeDocumentMoniker": "src\\GymScan.API\\Services\\CurrentUserService.cs",
+              "ToolTip": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Services\\CurrentUserService.cs",
+              "RelativeToolTip": "src\\GymScan.API\\Services\\CurrentUserService.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAswBkAAAA/AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T13:30:17.981Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "GlobalExceptionMiddleware.cs",
+              "DocumentMoniker": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Middleware\\GlobalExceptionMiddleware.cs",
+              "RelativeDocumentMoniker": "src\\GymScan.API\\Middleware\\GlobalExceptionMiddleware.cs",
+              "ToolTip": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Middleware\\GlobalExceptionMiddleware.cs",
+              "RelativeToolTip": "src\\GymScan.API\\Middleware\\GlobalExceptionMiddleware.cs",
+              "ViewState": "AgIAABUAAAAAAAAAAAAowAwAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T13:30:06.806Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "AppAuthorizeAttribute.cs",
+              "DocumentMoniker": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Attributes\\AppAuthorizeAttribute.cs",
+              "RelativeDocumentMoniker": "src\\GymScan.API\\Attributes\\AppAuthorizeAttribute.cs",
+              "ToolTip": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Attributes\\AppAuthorizeAttribute.cs",
+              "RelativeToolTip": "src\\GymScan.API\\Attributes\\AppAuthorizeAttribute.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T13:30:03.525Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\appsettings.json",
+              "RelativeDocumentMoniker": "src\\GymScan.API\\appsettings.json",
+              "ToolTip": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\appsettings.json",
+              "RelativeToolTip": "src\\GymScan.API\\appsettings.json",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-05-26T16:31:03.735Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ApiControllerBase.cs",
+              "DocumentMoniker": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Controllers\\Base\\ApiControllerBase.cs",
+              "RelativeDocumentMoniker": "src\\GymScan.API\\Controllers\\Base\\ApiControllerBase.cs",
+              "ToolTip": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Controllers\\Base\\ApiControllerBase.cs",
+              "RelativeToolTip": "src\\GymScan.API\\Controllers\\Base\\ApiControllerBase.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAA4AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T13:30:28.22Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "AuditableEntity.cs",
               "DocumentMoniker": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.Database\\Abstractions\\AuditableEntity.cs",
               "RelativeDocumentMoniker": "src\\GymScan.Database\\Abstractions\\AuditableEntity.cs",
               "ToolTip": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.Database\\Abstractions\\AuditableEntity.cs",
               "RelativeToolTip": "src\\GymScan.Database\\Abstractions\\AuditableEntity.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-26T12:28:35.27Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 6,
               "Title": "ISoftDeletable.cs",
               "DocumentMoniker": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.Database\\Abstractions\\ISoftDeletable.cs",
               "RelativeDocumentMoniker": "src\\GymScan.Database\\Abstractions\\ISoftDeletable.cs",
@@ -84,28 +165,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 7,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Program.cs",
               "RelativeDocumentMoniker": "src\\GymScan.API\\Program.cs",
               "ToolTip": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\Program.cs",
               "RelativeToolTip": "src\\GymScan.API\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-05-25T18:21:50.577Z",
               "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "appsettings.Development.json",
-              "DocumentMoniker": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\appsettings.Development.json",
-              "RelativeDocumentMoniker": "src\\GymScan.API\\appsettings.Development.json",
-              "ToolTip": "C:\\Users\\Andrew.Onsy\\Andrew\\MacrosTracker\\MacrosTrackerAPI\\src\\GymScan.API\\appsettings.Development.json",
-              "RelativeToolTip": "src\\GymScan.API\\appsettings.Development.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2026-05-25T18:21:45.071Z"
             }
           ]
         },

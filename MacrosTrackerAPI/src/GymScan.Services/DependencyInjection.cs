@@ -1,4 +1,6 @@
 using GymScan.Services.Features.Auth;
+using GymScan.Services.Features.FoodScan;
+using GymScan.Services.Features.FoodSearch;
 using GymScan.Services.Features.NutritionGoals;
 using GymScan.Services.Features.Profile;
 using GymScan.Services.Security;
@@ -16,6 +18,8 @@ public static class DependencyInjection
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<INutritionGoalService, NutritionGoalService>();
+        services.AddScoped<IFoodScanService, FoodScanService>();
+        services.AddScoped<IFoodSearchService, FoodSearchService>();
 
         return services;
     }

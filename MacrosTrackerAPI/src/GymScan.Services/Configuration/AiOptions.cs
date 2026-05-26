@@ -9,4 +9,6 @@ public sealed class AiOptions
     public string ApiKey { get; init; } = string.Empty;
 
     public string Model { get; init; } = string.Empty;
+
+    public string PromptTemplate { get; init; } = string.Empty;
 }
