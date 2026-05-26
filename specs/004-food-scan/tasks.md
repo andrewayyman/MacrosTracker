@@ -74,9 +74,9 @@ description: "Task list for AI Food Scan feature implementation"
 
 ### Frontend — User Story 1
 
-- [ ] T025 [P] [US1] Create `foodScanClient.js` with `analyzeFood(formData)` function posting to `/api/FoodScan/Analyze` with `Content-Type: multipart/form-data`, attaching the Bearer token from auth store in `MacrosTrackerWeb/src/api/foodScanClient.js`
-- [ ] T026 [P] [US1] Create `ScanResultCard.jsx` component rendering: food name, calorie count prominently, macro grid (Protein / Carbs / Fat in grams), serving size estimate, source badge ("Verified local data" in green or "AI estimate X% confidence" in amber), notes line when present, low-confidence warning with "Search manually instead" link when `resultSource === 'AiEstimate'` and `confidencePercent < 40` in `MacrosTrackerWeb/src/components/ScanResultCard.jsx`
-- [ ] T027 [US1] Build the scan upload UI in `MacrosTrackerWeb/src/pages/Scan.jsx`: file input with `accept="image/*" capture="environment"` for camera on mobile, selected image preview, Analyze button (disabled until file selected), loading spinner with "Analyzing your meal..." text during request, render `ScanResultCard` on success, show inline error message on 400/503, show "Search manually instead" link on 503
+- [X] T025 [P] [US1] Create `foodScanClient.js` with `analyzeFood(formData)` function posting to `/api/FoodScan/Analyze` with `Content-Type: multipart/form-data`, attaching the Bearer token from auth store in `MacrosTrackerWeb/src/api/foodScanClient.js`
+- [X] T026 [P] [US1] Create `ScanResultCard.jsx` component rendering: food name, calorie count prominently, macro grid (Protein / Carbs / Fat in grams), serving size estimate, source badge ("Verified local data" in green or "AI estimate X% confidence" in amber), notes line when present, low-confidence warning with "Search manually instead" link when `resultSource === 'AiEstimate'` and `confidencePercent < 40` in `MacrosTrackerWeb/src/components/ScanResultCard.jsx`
+- [X] T027 [US1] Build the scan upload UI in `MacrosTrackerWeb/src/pages/Scan.jsx`: file input with `accept="image/*" capture="environment"` for camera on mobile, selected image preview, Analyze button (disabled until file selected), loading spinner with "Analyzing your meal..." text during request, render `ScanResultCard` on success, show inline error message on 400/503, show "Search manually instead" link on 503
 
 **Checkpoint**: US1 complete — upload a real food photo, receive a result card with macros and source badge. Test independently without logging.
 
@@ -99,9 +99,9 @@ description: "Task list for AI Food Scan feature implementation"
 
 ### Frontend — User Story 2
 
-- [ ] T034 [P] [US2] Create `MealTypeSelector.jsx` component rendering four buttons (Breakfast / Lunch / Dinner / Snack), highlighting the selected one, calling an `onSelect(mealType)` prop in `MacrosTrackerWeb/src/components/MealTypeSelector.jsx`
-- [ ] T035 [US2] Add `logMeal(payload)` function to `MacrosTrackerWeb/src/api/foodScanClient.js` posting to `/api/FoodScan/Log` with JSON body and Bearer token
-- [ ] T036 [US2] Add log flow to `MacrosTrackerWeb/src/pages/Scan.jsx`: "Log this meal" button on `ScanResultCard`, renders `MealTypeSelector`, Confirm button calls `logMeal`, shows success toast "Meal logged ✓" on 201, "Dismiss" button discards result without logging and resets to upload state
+- [X] T034 [P] [US2] Create `MealTypeSelector.jsx` component rendering four buttons (Breakfast / Lunch / Dinner / Snack), highlighting the selected one, calling an `onSelect(mealType)` prop in `MacrosTrackerWeb/src/components/MealTypeSelector.jsx`
+- [X] T035 [US2] Add `logMeal(payload)` function to `MacrosTrackerWeb/src/api/foodScanClient.js` posting to `/api/FoodScan/Log` with JSON body and Bearer token
+- [X] T036 [US2] Add log flow to `MacrosTrackerWeb/src/pages/Scan.jsx`: "Log this meal" button on `ScanResultCard`, renders `MealTypeSelector`, Confirm button calls `logMeal`, shows success toast "Meal logged ✓" on 201, "Dismiss" button discards result without logging and resets to upload state
 
 **Checkpoint**: US1 + US2 complete — full scan-to-diary flow works end-to-end. Dashboard totals should reflect the new MealLog row.
 
@@ -124,9 +124,9 @@ description: "Task list for AI Food Scan feature implementation"
 
 ### Frontend — User Story 3
 
-- [ ] T043 [P] [US3] Add `searchFood(query)` function to `MacrosTrackerWeb/src/api/foodScanClient.js` calling `GET /api/FoodScan/Search?q={query}` with Bearer token
-- [ ] T044 [US3] Create `FoodSearchPanel.jsx`: text input with 400ms debounce triggering `searchFood`, results list showing name + calories + macros per serving, clicking a result populates a pre-filled log form (food name, calories, macros, localFoodItemId set, no foodScanId) then shows `MealTypeSelector` → Confirm logs the entry in `MacrosTrackerWeb/src/components/FoodSearchPanel.jsx`
-- [ ] T045 [US3] Integrate `FoodSearchPanel` into `MacrosTrackerWeb/src/pages/Scan.jsx`: "Search manually instead" link (shown always below scan UI, also linked from 503 error and from low-confidence note in `ScanResultCard`) toggles between scan view and `FoodSearchPanel`; completed log from search panel shows the same success toast and resets view
+- [X] T043 [P] [US3] Add `searchFood(query)` function to `MacrosTrackerWeb/src/api/foodScanClient.js` calling `GET /api/FoodScan/Search?q={query}` with Bearer token
+- [X] T044 [US3] Create `FoodSearchPanel.jsx`: text input with 400ms debounce triggering `searchFood`, results list showing name + calories + macros per serving, clicking a result populates a pre-filled log form (food name, calories, macros, localFoodItemId set, no foodScanId) then shows `MealTypeSelector` → Confirm logs the entry in `MacrosTrackerWeb/src/components/FoodSearchPanel.jsx`
+- [X] T045 [US3] Integrate `FoodSearchPanel` into `MacrosTrackerWeb/src/pages/Scan.jsx`: "Search manually instead" link (shown always below scan UI, also linked from 503 error and from low-confidence note in `ScanResultCard`) toggles between scan view and `FoodSearchPanel`; completed log from search panel shows the same success toast and resets view
 
 **Checkpoint**: All three user stories complete — scan, log from scan, and log from manual search all work independently.
 
@@ -138,7 +138,7 @@ description: "Task list for AI Food Scan feature implementation"
 
 - [X] T046 [P] Verify all three endpoints (`POST /Analyze`, `POST /Log`, `GET /Search`) appear in Swagger at `http://localhost:5000/swagger` with correct request/response schemas and the `[Authorize]` lock icon
 - [ ] T047 Run all five quickstart.md smoke tests in order: file type rejection, analyze real photo, manual search for "koshary", log a meal via `/Log`, set `AI:ApiKey` to invalid value and confirm 503 with fallback message shown
-- [ ] T048 [P] Add inline loading states and error boundary to `MacrosTrackerWeb/src/pages/Scan.jsx`: show spinner during analyze request, show specific message for file-too-large (client-side check before upload), show specific message for wrong file type (client-side MIME check), ensure page does not crash if `ScanResultCard` receives null data
+- [X] T048 [P] Add inline loading states and error boundary to `MacrosTrackerWeb/src/pages/Scan.jsx`: show spinner during analyze request, show specific message for file-too-large (client-side check before upload), show specific message for wrong file type (client-side MIME check), ensure page does not crash if `ScanResultCard` receives null data
 
 ---
 
