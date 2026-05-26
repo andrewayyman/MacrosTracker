@@ -1,0 +1,324 @@
+openapi: 3.0.3
+info:
+  title: GymScan Profile and Nutrition Goals API
+  version: 1.0.0
+  description: Contract for onboarding setup bootstrap, profile maintenance, and daily macro-goal management.
+servers:
+  - url: http://localhost:5101
+paths:
+  /api/profile/setup:
+    get:
+      summary: Get the current signed-in user's onboarding setup summary
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Setup summary loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetupSummaryEnvelope'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /api/profile:
+    get:
+      summary: Get the current signed-in user's profile and body metrics
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileEnvelope'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    put:
+      summary: Create or update the current signed-in user's profile and body metrics
+      tags: [Profile]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertProfileRequest'
+      responses:
+        '200':
+          description: Profile saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileEnvelope'
+        '400':
+          description: Validation failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /api/nutrition-goals/daily:
+    get:
+      summary: Get the current signed-in user's active daily nutrition goal
+      tags: [Nutrition Goals]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Daily goal loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyGoalEnvelope'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    put:
+      summary: Create or update the current signed-in user's active daily nutrition goal
+      tags: [Nutrition Goals]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertDailyGoalRequest'
+      responses:
+        '200':
+          description: Daily goal saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyGoalEnvelope'
+        '400':
+          description: Validation failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UpsertProfileRequest:
+      type: object
+      required:
+        - firstName
+        - weightKg
+        - heightCm
+        - age
+        - gender
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+          nullable: true
+        weightKg:
+          type: number
+          format: double
+        heightCm:
+          type: number
+          format: double
+        age:
+          type: integer
+        gender:
+          type: string
+          enum:
+            - Male
+            - Female
+    UpsertDailyGoalRequest:
+      type: object
+      required:
+        - caloriesTarget
+        - proteinGramsTarget
+        - carbohydratesGramsTarget
+        - fatGramsTarget
+      properties:
+        caloriesTarget:
+          type: integer
+        proteinGramsTarget:
+          type: number
+          format: double
+        carbohydratesGramsTarget:
+          type: number
+          format: double
+        fatGramsTarget:
+          type: number
+          format: double
+        goalSource:
+          type: string
+          enum:
+            - Suggested
+            - Custom
+          nullable: true
+    SetupSummaryEnvelope:
+      type: object
+      required: [data, message, errorList]
+      properties:
+        data:
+          $ref: '#/components/schemas/SetupSummary'
+        message:
+          type: string
+          example: Setup summary loaded successfully.
+        errorList:
+          type: array
+          items:
+            type: string
+          example: []
+    ProfileEnvelope:
+      type: object
+      required: [data, message, errorList]
+      properties:
+        data:
+          $ref: '#/components/schemas/ProfileDetails'
+        message:
+          type: string
+          example: Profile saved successfully.
+        errorList:
+          type: array
+          items:
+            type: string
+          example: []
+    DailyGoalEnvelope:
+      type: object
+      required: [data, message, errorList]
+      properties:
+        data:
+          $ref: '#/components/schemas/DailyGoal'
+        message:
+          type: string
+          example: Daily goal saved successfully.
+        errorList:
+          type: array
+          items:
+            type: string
+          example: []
+    ErrorEnvelope:
+      type: object
+      required: [data, message, errorList]
+      properties:
+        data:
+          nullable: true
+        message:
+          type: string
+          example: Validation failed.
+        errorList:
+          type: array
+          items:
+            type: string
+    SetupSummary:
+      type: object
+      required:
+        - userId
+        - setupStatus
+        - isProfileComplete
+        - isGoalComplete
+      properties:
+        userId:
+          type: string
+        setupStatus:
+          type: string
+          enum:
+            - AccountCreated
+            - ProfilePending
+            - ProfileCompleted
+        isProfileComplete:
+          type: boolean
+        isGoalComplete:
+          type: boolean
+        profile:
+          $ref: '#/components/schemas/ProfileDetails'
+          nullable: true
+        dailyGoal:
+          $ref: '#/components/schemas/DailyGoal'
+          nullable: true
+    ProfileDetails:
+      type: object
+      required:
+        - firstName
+        - setupStatus
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+          nullable: true
+        weightKg:
+          type: number
+          format: double
+          nullable: true
+        heightCm:
+          type: number
+          format: double
+          nullable: true
+        age:
+          type: integer
+          nullable: true
+        gender:
+          type: string
+          enum:
+            - Male
+            - Female
+          nullable: true
+        setupStatus:
+          type: string
+          enum:
+            - AccountCreated
+            - ProfilePending
+            - ProfileCompleted
+    DailyGoal:
+      type: object
+      required:
+        - caloriesTarget
+        - proteinGramsTarget
+        - carbohydratesGramsTarget
+        - fatGramsTarget
+        - goalSource
+      properties:
+        caloriesTarget:
+          type: integer
+        proteinGramsTarget:
+          type: number
+          format: double
+        carbohydratesGramsTarget:
+          type: number
+          format: double
+        fatGramsTarget:
+          type: number
+          format: double
+        goalSource:
+          type: string
+          enum:
+            - Suggested
+            - Custom

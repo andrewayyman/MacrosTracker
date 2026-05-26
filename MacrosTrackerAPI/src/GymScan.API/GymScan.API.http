@@ -1,0 +1,6 @@
+@GymScan.API_HostAddress = http://localhost:5051
+
+GET {{GymScan.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
