@@ -10,6 +10,7 @@ import LoginPage from "./pages/Login";
 import ManualLogPage from "./pages/ManualLog";
 import NotFoundPage from "./pages/NotFound";
 import ProfileSetupPage from "./pages/ProfileSetup";
+import ProgressPage from "./pages/Progress";
 import RegisterPage from "./pages/Register";
 import ScanPage from "./pages/Scan";
 
@@ -66,6 +67,14 @@ function App() {
         element={
           <ProtectedRoute>
             <ManualLogPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/progress"
+        element={
+          <ProtectedRoute>
+            <ProgressPage />
           </ProtectedRoute>
         }
       />

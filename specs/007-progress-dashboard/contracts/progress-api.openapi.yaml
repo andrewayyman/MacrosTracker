@@ -1,0 +1,294 @@
+openapi: 3.0.3
+info:
+  title: GymScan Progress API
+  version: "1.0"
+  description: |
+    Read-only endpoints for the Progress Dashboard & Goal Achievement feature (Spec 007).
+    All endpoints require JWT bearer authentication.
+    All responses use the standard envelope: { data, message, errorList }.
+
+servers:
+  - url: /api
+
+security:
+  - BearerAuth: []
+
+paths:
+  /Progress/trends:
+    get:
+      summary: Get calorie and macro trend data for a date range
+      operationId: GetProgressTrends
+      tags: [Progress]
+      parameters:
+        - name: range
+          in: query
+          required: false
+          schema:
+            type: integer
+            enum: [7, 30, 90]
+            default: 7
+          description: Number of days back from today (inclusive). Defaults to 7.
+      responses:
+        "200":
+          description: Trend data for the requested range
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrendResponseEnvelope"
+        "400":
+          description: Invalid range value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Unauthenticated
+
+  /Progress/streaks:
+    get:
+      summary: Get streak count, 30-day goal hit rate, and heatmap
+      operationId: GetProgressStreaks
+      tags: [Progress]
+      responses:
+        "200":
+          description: Streak and heatmap data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StreakResponseEnvelope"
+        "401":
+          description: Unauthenticated
+
+  /Progress/weekly:
+    get:
+      summary: Get weekly summary for a given Monday
+      operationId: GetWeeklySummary
+      tags: [Progress]
+      parameters:
+        - name: weekStart
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-05-25"
+          description: |
+            ISO date (yyyy-MM-dd) of the Monday starting the target week.
+            Defaults to the Monday of the current week.
+            Returns 400 if the date is not a Monday.
+      responses:
+        "200":
+          description: Weekly summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklySummaryEnvelope"
+        "400":
+          description: Date is not a Monday or invalid format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Unauthenticated
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    # ── Envelope wrappers ──────────────────────────────────────────────────────
+
+    TrendResponseEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/TrendResponseDto"
+        message:
+          type: string
+        errorList:
+          type: array
+          items:
+            type: string
+
+    StreakResponseEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/StreakResponseDto"
+        message:
+          type: string
+        errorList:
+          type: array
+          items:
+            type: string
+
+    WeeklySummaryEnvelope:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/WeeklySummaryResponseDto"
+        message:
+          type: string
+        errorList:
+          type: array
+          items:
+            type: string
+
+    ErrorEnvelope:
+      type: object
+      properties:
+        data:
+          nullable: true
+        message:
+          type: string
+        errorList:
+          type: array
+          items:
+            type: string
+
+    # ── Domain DTOs ────────────────────────────────────────────────────────────
+
+    GoalSnapshotDto:
+      type: object
+      description: Active daily nutrition goal targets. Null when no goal is set.
+      properties:
+        caloriesTarget:
+          type: integer
+        proteinTarget:
+          type: number
+          format: decimal
+        carbsTarget:
+          type: number
+          format: decimal
+        fatTarget:
+          type: number
+          format: decimal
+
+    TrendDayDto:
+      type: object
+      description: Aggregated nutrition totals for one calendar day.
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-05-20"
+        calories:
+          type: number
+          format: decimal
+        protein:
+          type: number
+          format: decimal
+        carbs:
+          type: number
+          format: decimal
+        fat:
+          type: number
+          format: decimal
+        hasData:
+          type: boolean
+          description: True when at least one MealLog entry exists for this day.
+
+    TrendResponseDto:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendDayDto"
+          description: One entry per calendar day in the range, from oldest to newest.
+        goals:
+          $ref: "#/components/schemas/GoalSnapshotDto"
+          nullable: true
+        rangeInDays:
+          type: integer
+          enum: [7, 30, 90]
+
+    DayStatusEntry:
+      type: object
+      description: Status classification for one calendar day used in heatmap.
+      properties:
+        date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [OnGoal, OverGoal, UnderGoal, NoData]
+        totalCalories:
+          type: number
+          format: decimal
+          description: Actual logged calories. 0 when status is NoData.
+
+    StreakResponseDto:
+      type: object
+      properties:
+        currentStreak:
+          type: integer
+          description: Consecutive OnGoal days ending at today or most recent logged day.
+        goalHitRate:
+          type: number
+          format: decimal
+          description: Percentage (0–100) of logged days in past 30 days that were OnGoal.
+        heatmapDays:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayStatusEntry"
+          description: Past 30 calendar days including today, ordered oldest to newest.
+        hasGoal:
+          type: boolean
+          description: False when no active nutrition goal is configured.
+
+    WeekDayEntry:
+      type: object
+      description: Summary for one day within a week.
+      properties:
+        date:
+          type: string
+          format: date
+        dayName:
+          type: string
+          example: "Monday"
+        totalCalories:
+          type: number
+          format: decimal
+        caloriesTarget:
+          type: integer
+          description: 0 when no goal is set.
+        hasData:
+          type: boolean
+        status:
+          type: string
+          enum: [OnGoal, OverGoal, UnderGoal, NoData]
+
+    WeeklySummaryResponseDto:
+      type: object
+      properties:
+        weekStart:
+          type: string
+          format: date
+          description: Always a Monday.
+        weekEnd:
+          type: string
+          format: date
+          description: Always the following Sunday.
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeekDayEntry"
+          minItems: 7
+          maxItems: 7
+          description: Mon → Sun, 7 entries always present.
+        weeklyTotal:
+          type: number
+          format: decimal
+          description: Sum of calories across days where hasData is true.
+        weeklyGoal:
+          type: number
+          format: decimal
+          description: caloriesTarget × count of days where hasData is true (prorated). 0 when no goal.
+        hasGoal:
+          type: boolean
