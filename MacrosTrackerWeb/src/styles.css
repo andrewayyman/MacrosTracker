@@ -228,42 +228,101 @@ button, input, textarea, select { font: inherit; }
    ============================================================ */
 .landing-shell {
   min-height: 100vh;
+  background: oklch(0.228 0.064 155);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--sp-8) var(--sp-6);
+  padding: var(--sp-12) var(--sp-6);
 }
 
-.landing-hero { width: 100%; max-width: 520px; }
+.landing-hero {
+  width: 100%;
+  max-width: 540px;
+}
 
 .landing-eyebrow {
-  display: inline-block;
-  margin-bottom: var(--sp-5);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-6);
   font-size: var(--text-xs);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--accent);
+  letter-spacing: 0.16em;
+  color: oklch(0.700 0.165 75);
+}
+
+.landing-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: oklch(0.700 0.165 75);
+  flex-shrink: 0;
 }
 
 .landing-title {
-  font-size: var(--text-4xl);
+  font-size: 4rem;
   font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1.05;
-  color: var(--text-1);
+  letter-spacing: -0.05em;
+  line-height: 1.0;
+  color: oklch(0.960 0.008 85);
   margin-bottom: var(--sp-5);
 }
 
 .landing-tagline {
   font-size: var(--text-lg);
-  color: var(--text-2);
-  line-height: 1.6;
-  margin-bottom: var(--sp-8);
-  max-width: 40ch;
+  color: oklch(0.720 0.015 85);
+  line-height: 1.65;
+  margin-bottom: var(--sp-10);
+  max-width: 44ch;
 }
 
-.landing-cta { display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+.landing-cta {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-10);
+}
+
+/* Amber CTA override for dark landing context */
+.landing-shell .button-primary {
+  background: oklch(0.700 0.165 75);
+  border-color: oklch(0.700 0.165 75);
+  color: oklch(0.150 0.020 85);
+}
+.landing-shell .button-primary:hover:not(:disabled) {
+  background: oklch(0.648 0.165 75);
+  border-color: oklch(0.648 0.165 75);
+  box-shadow: 0 2px 18px oklch(0.700 0.165 75 / 0.40);
+  text-decoration: none;
+}
+
+.landing-features {
+  display: flex;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.landing-feature {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: oklch(0.580 0.030 155);
+}
+
+.landing-feature::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: oklch(0.700 0.165 75);
+  flex-shrink: 0;
+}
 
 /* ============================================================
    AUTH
@@ -485,6 +544,30 @@ button, input, textarea, select { font: inherit; }
 }
 .link-btn:hover { color: var(--accent-hover); }
 
+.button-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: 0 var(--sp-5);
+  border: 1px solid oklch(0.960 0.008 85 / 0.22);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: oklch(0.820 0.012 85);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 150ms, border-color 150ms;
+}
+.button-ghost:hover {
+  background: oklch(0.960 0.008 85 / 0.07);
+  border-color: oklch(0.960 0.008 85 / 0.36);
+  text-decoration: none;
+}
+
 /* ============================================================
    STATUS GRID (Dashboard)
    ============================================================ */
@@ -515,6 +598,114 @@ button, input, textarea, select { font: inherit; }
   font-size: var(--text-base);
   color: var(--text-1);
   font-weight: 500;
+}
+
+/* ============================================================
+   DASHBOARD HUB
+   ============================================================ */
+.dash-greeting {
+  margin-bottom: var(--sp-8);
+  padding: var(--sp-6);
+  background: var(--accent-subtle);
+  border: 1px solid oklch(0.440 0.110 155 / 0.14);
+  border-radius: var(--radius-xl);
+}
+
+.dash-greeting__eyebrow {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: var(--sp-2);
+}
+
+.dash-greeting__name {
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-1);
+  line-height: 1.1;
+  margin-bottom: var(--sp-1);
+}
+
+.dash-greeting__sub {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+}
+
+.dash-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-8);
+}
+
+.dash-action {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  cursor: pointer;
+  transition: box-shadow 150ms var(--ease-out), transform 150ms var(--ease-out), border-color 150ms;
+}
+.dash-action:hover {
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+}
+
+.dash-action--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.dash-action--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  box-shadow: 0 6px 20px oklch(0.440 0.110 155 / 0.28);
+  transform: translateY(-1px);
+}
+
+.dash-action__label {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text-1);
+}
+.dash-action--primary .dash-action__label {
+  color: var(--accent-fg);
+}
+
+.dash-action__sub {
+  font-size: var(--text-xs);
+  color: var(--text-3);
+  line-height: 1.5;
+}
+.dash-action--primary .dash-action__sub {
+  color: oklch(0.820 0.060 155);
+}
+
+.dash-meta {
+  padding: var(--sp-5) 0 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.dash-meta__link {
+  font-size: var(--text-sm);
+  color: var(--text-2);
+  text-decoration: none;
+}
+.dash-meta__link:hover {
+  color: var(--text-1);
+  text-decoration: none;
 }
 
 /* ============================================================
@@ -992,8 +1183,9 @@ button, input, textarea, select { font: inherit; }
 
   .app-nav__username { display: none; }
 
-  .landing-title { font-size: var(--text-3xl); }
+  .landing-title { font-size: 2.75rem; }
   .page-title    { font-size: var(--text-2xl); }
+  .dash-actions  { grid-template-columns: 1fr; }
 
   .auth-card { padding: var(--sp-8) var(--sp-5); }
 }

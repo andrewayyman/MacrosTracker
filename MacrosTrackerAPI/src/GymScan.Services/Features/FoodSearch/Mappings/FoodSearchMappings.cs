@@ -17,4 +17,18 @@ public static class FoodSearchMappings
             FatPerServing: Math.Round(item.FatPer100g * multiplier, 1),
             ServingSizeGrams: item.TypicalServingSizeGrams);
     }
+
+    public static RecentFoodDto ToRecentFoodDto(this LocalFoodItem item, decimal lastServingSizeGrams)
+    {
+        var multiplier = item.TypicalServingSizeGrams / 100m;
+        return new RecentFoodDto(
+            Id: item.Id,
+            Name: item.Name,
+            CaloriesPerServing: Math.Round(item.CaloriesPer100g * multiplier, 1),
+            ProteinPerServing: Math.Round(item.ProteinPer100g * multiplier, 1),
+            CarbsPerServing: Math.Round(item.CarbsPer100g * multiplier, 1),
+            FatPerServing: Math.Round(item.FatPer100g * multiplier, 1),
+            ServingSizeGrams: item.TypicalServingSizeGrams,
+            LastServingSizeGrams: lastServingSizeGrams);
+    }
 }

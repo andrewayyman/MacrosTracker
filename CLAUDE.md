@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at
-`specs/005-meal-diary/plan.md`.
+`specs/006-daily-nutrition-log/plan.md`.
 
 Architecture standard for future backend work in this repository:
 - Follow a clean N-tier modular monolith structure.

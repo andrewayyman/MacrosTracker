@@ -1,0 +1,146 @@
+openapi: 3.0.3
+info:
+  title: GymScan – Daily Nutrition Log API (Spec 006)
+  description: >
+    New endpoint added by Spec 006. All existing endpoints used by this feature
+    (FoodScan/Search, FoodScan/Log, Diary) are documented in their originating
+    spec contracts (004, 005).
+  version: 1.0.0
+
+servers:
+  - url: /api
+
+security:
+  - bearerAuth: []
+
+paths:
+  /FoodScan/RecentFoods:
+    get:
+      summary: Get recent foods
+      description: >
+        Returns up to 10 distinct food items from the local food database that the
+        authenticated user has logged in the last 30 days, ordered by most recently
+        logged. Only items linked to a LocalFoodItem record are returned (AI-only
+        scan entries without a local food match are excluded). Response shape is
+        identical to FoodScan/Search to allow the frontend to handle both lists
+        with the same component.
+      operationId: getRecentFoods
+      tags:
+        - FoodScan
+      responses:
+        '200':
+          description: Recent foods retrieved successfully (empty list if no history).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FoodSearchResultListResponse'
+              example:
+                data:
+                  - id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                    name: "Koshary"
+                    caloriesPerServing: 350.00
+                    proteinPerServing: 10.50
+                    carbsPerServing: 65.00
+                    fatPerServing: 5.00
+                    servingSizeGrams: 300.00
+                  - id: "7cd12a44-8823-4112-a9de-1b084f33bb77"
+                    name: "Falafel"
+                    caloriesPerServing: 180.00
+                    proteinPerServing: 7.00
+                    carbsPerServing: 20.00
+                    fatPerServing: 9.00
+                    servingSizeGrams: 100.00
+                message: "Found 2 recent food(s)."
+                errorList: []
+        '401':
+          description: Unauthenticated — JWT token missing or invalid.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    FoodSearchResultDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: LocalFoodItem primary key.
+        name:
+          type: string
+          description: Display name of the food item.
+        caloriesPerServing:
+          type: number
+          format: decimal
+          description: Calories for one standard serving.
+        proteinPerServing:
+          type: number
+          format: decimal
+          description: Protein grams for one standard serving.
+        carbsPerServing:
+          type: number
+          format: decimal
+          description: Carbohydrate grams for one standard serving.
+        fatPerServing:
+          type: number
+          format: decimal
+          description: Fat grams for one standard serving.
+        servingSizeGrams:
+          type: number
+          format: decimal
+          description: Weight of one standard serving in grams.
+      required:
+        - id
+        - name
+        - caloriesPerServing
+        - proteinPerServing
+        - carbsPerServing
+        - fatPerServing
+        - servingSizeGrams
+
+    FoodSearchResultListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FoodSearchResultDto'
+        message:
+          type: string
+        errorList:
+          type: array
+          items:
+            type: string
+      required:
+        - data
+        - message
+        - errorList
+
+    ErrorResponse:
+      type: object
+      properties:
+        data:
+          nullable: true
+        message:
+          type: string
+        errorList:
+          type: array
+          items:
+            type: string
+      required:
+        - message
+        - errorList
+
+  # --- Existing endpoints referenced by this feature (from Spec 004 / 005) ---
+  # GET  /api/FoodScan/Search?q={query}    → FoodSearchResultListResponse
+  # POST /api/FoodScan/Log                 → LogMealRequest → MealLogResponse
+  # GET  /api/Diary?date={yyyy-MM-dd}      → DiaryDayResponse
+  # Full schemas are in specs/004-food-scan/contracts/ and specs/005-meal-diary/contracts/

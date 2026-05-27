@@ -1,5 +1,6 @@
 using GymScan.API.Attributes;
 using GymScan.API.Controllers.Base;
+using GymScan.Services.Common.Interfaces;
 using GymScan.Services.Common.Models;
 using GymScan.Services.Features.FoodScan;
 using GymScan.Services.Features.FoodScan.Dtos.Requests;
@@ -15,11 +16,13 @@ public sealed class FoodScanController : ApiControllerBase
 {
     private readonly IFoodScanService _foodScanService;
     private readonly IFoodSearchService _foodSearchService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public FoodScanController(IFoodScanService foodScanService, IFoodSearchService foodSearchService)
+    public FoodScanController(IFoodScanService foodScanService, IFoodSearchService foodSearchService, ICurrentUserService currentUserService)
     {
         _foodScanService = foodScanService;
         _foodSearchService = foodSearchService;
+        _currentUserService = currentUserService;
     }
 
     [HttpPost]
@@ -40,6 +43,17 @@ public sealed class FoodScanController : ApiControllerBase
     public async Task<ActionResult<ServiceResponse<List<FoodSearchResultDto>>>> Search([FromQuery] string q)
     {
         var response = await _foodSearchService.SearchAsync(q);
+        return ToActionResult(response);
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<ServiceResponse<List<RecentFoodDto>>>> RecentFoods()
+    {
+        var userId = _currentUserService.GetCurrentContext().UserId;
+        if (userId is null)
+            return ToActionResult(ServiceResponse<List<RecentFoodDto>>.Failure("Unauthorized.", ["Authentication required."], 401));
+
+        var response = await _foodSearchService.GetRecentFoodsAsync(userId.Value);
         return ToActionResult(response);
     }
 }
