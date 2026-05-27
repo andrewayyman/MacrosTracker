@@ -7,14 +7,13 @@ const MEAL_TYPES = [
 
 function MealTypeSelector({ selected, onSelect }) {
   return (
-    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+    <div className="meal-type-row">
       {MEAL_TYPES.map(({ value, label }) => (
         <button
           key={value}
           type="button"
           onClick={() => onSelect(value)}
           className={selected === value ? "button-primary" : "button-secondary"}
-          style={{ fontSize: "0.9rem", minHeight: 40, padding: "0 16px" }}
         >
           {label}
         </button>

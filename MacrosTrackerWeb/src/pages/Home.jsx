@@ -6,19 +6,15 @@ function HomePage() {
 
   return (
     <main className="landing-shell">
-      <section className="landing-panel">
-        <p className="eyebrow">Phase 0 Foundation</p>
-        <h1>{appName}</h1>
-        <p className="description">{tagline}</p>
-        <div className="cta-row">
-          <Link className="button-primary" to="/register">
-            Start tracking
-          </Link>
-          <Link className="button-secondary" to="/login">
-            Sign in
-          </Link>
+      <div className="landing-hero">
+        <span className="landing-eyebrow">Nutrition tracking</span>
+        <h1 className="landing-title">{appName}</h1>
+        <p className="landing-tagline">{tagline}</p>
+        <div className="landing-cta">
+          <Link className="button-primary" to="/register">Start tracking</Link>
+          <Link className="button-secondary" to="/login">Sign in</Link>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

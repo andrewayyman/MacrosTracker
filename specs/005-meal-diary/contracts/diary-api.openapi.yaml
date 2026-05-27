@@ -1,0 +1,306 @@
+openapi: "3.0.3"
+info:
+  title: GymScan Diary API
+  version: "1.0"
+  description: Endpoints for reading and managing the user's daily meal diary.
+
+servers:
+  - url: http://localhost:5000
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    MealLogEntryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier — used as the target for DELETE.
+        foodName:
+          type: string
+          example: Koshary
+        calories:
+          type: number
+          format: decimal
+          example: 520.00
+        protein:
+          type: number
+          format: decimal
+          example: 18.50
+        carbs:
+          type: number
+          format: decimal
+          example: 92.00
+        fat:
+          type: number
+          format: decimal
+          example: 11.00
+        servingSizeGrams:
+          type: number
+          format: decimal
+          nullable: true
+          example: 350.00
+        loggedAt:
+          type: string
+          format: date-time
+          description: UTC timestamp when the entry was logged.
+          example: "2026-05-27T12:34:56Z"
+
+    MealGroupDto:
+      type: object
+      properties:
+        mealType:
+          type: string
+          enum: [Breakfast, Lunch, Dinner, Snack]
+          description: Display label for the meal type group.
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealLogEntryDto"
+          description: Entries ordered by loggedAt ascending.
+        groupCalories:
+          type: number
+          format: decimal
+          description: Sum of calories across all entries in this group.
+          example: 820.00
+
+    DailySummaryDto:
+      type: object
+      properties:
+        totalCalories:
+          type: number
+          format: decimal
+          example: 1450.00
+        totalProtein:
+          type: number
+          format: decimal
+          example: 62.50
+        totalCarbs:
+          type: number
+          format: decimal
+          example: 210.00
+        totalFat:
+          type: number
+          format: decimal
+          example: 38.00
+
+    GoalSnapshotDto:
+      type: object
+      nullable: true
+      description: The user's active daily nutrition targets. Null if no goal has been saved.
+      properties:
+        caloriesTarget:
+          type: number
+          format: decimal
+          example: 2000.00
+        proteinTarget:
+          type: number
+          format: decimal
+          example: 150.00
+        carbsTarget:
+          type: number
+          format: decimal
+          example: 220.00
+        fatTarget:
+          type: number
+          format: decimal
+          example: 60.00
+
+    DiaryDayDto:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: The calendar date this diary covers (YYYY-MM-DD).
+          example: "2026-05-27"
+        mealGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/MealGroupDto"
+          description: Meal type groups that have at least one entry, in enum order (Breakfast first).
+        dailySummary:
+          $ref: "#/components/schemas/DailySummaryDto"
+        goals:
+          $ref: "#/components/schemas/GoalSnapshotDto"
+
+    ServiceResponseDiaryDay:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/DiaryDayDto"
+        message:
+          type: string
+          example: ""
+        errorList:
+          type: array
+          items:
+            type: string
+
+    ServiceResponseEmpty:
+      type: object
+      properties:
+        data:
+          type: object
+          nullable: true
+        message:
+          type: string
+        errorList:
+          type: array
+          items:
+            type: string
+
+paths:
+  /api/Diary:
+    get:
+      summary: Get diary entries and daily summary for a specific date
+      description: >
+        Returns all meal log entries for the authenticated user on the specified date,
+        grouped by meal type, along with daily macro totals and goal comparison.
+        Defaults to today (server-side UTC date) when the `date` parameter is omitted.
+        Future dates are rejected with 400.
+      operationId: getDiary
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-05-27"
+          description: Calendar date in YYYY-MM-DD format. Omit to get today's diary.
+      responses:
+        "200":
+          description: Diary entries and summary for the requested date.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseDiaryDay"
+              examples:
+                with_entries:
+                  summary: Day with meals logged
+                  value:
+                    data:
+                      date: "2026-05-27"
+                      mealGroups:
+                        - mealType: Breakfast
+                          entries:
+                            - id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                              foodName: Ful Medames
+                              calories: 320.00
+                              protein: 16.00
+                              carbs: 45.00
+                              fat: 9.00
+                              servingSizeGrams: 280.00
+                              loggedAt: "2026-05-27T08:12:00Z"
+                          groupCalories: 320.00
+                        - mealType: Lunch
+                          entries:
+                            - id: "a1b2c3d4-5717-4562-b3fc-2c963f66afa6"
+                              foodName: Koshary
+                              calories: 520.00
+                              protein: 18.50
+                              carbs: 92.00
+                              fat: 11.00
+                              servingSizeGrams: 350.00
+                              loggedAt: "2026-05-27T13:04:00Z"
+                          groupCalories: 520.00
+                      dailySummary:
+                        totalCalories: 840.00
+                        totalProtein: 34.50
+                        totalCarbs: 137.00
+                        totalFat: 20.00
+                      goals:
+                        caloriesTarget: 2000.00
+                        proteinTarget: 150.00
+                        carbsTarget: 220.00
+                        fatTarget: 60.00
+                    message: ""
+                    errorList: []
+                empty_day:
+                  summary: Day with no entries
+                  value:
+                    data:
+                      date: "2026-05-26"
+                      mealGroups: []
+                      dailySummary:
+                        totalCalories: 0.00
+                        totalProtein: 0.00
+                        totalCarbs: 0.00
+                        totalFat: 0.00
+                      goals:
+                        caloriesTarget: 2000.00
+                        proteinTarget: 150.00
+                        carbsTarget: 220.00
+                        fatTarget: 60.00
+                    message: ""
+                    errorList: []
+                no_goal:
+                  summary: User has no active nutrition goal
+                  value:
+                    data:
+                      date: "2026-05-27"
+                      mealGroups: []
+                      dailySummary:
+                        totalCalories: 0.00
+                        totalProtein: 0.00
+                        totalCarbs: 0.00
+                        totalFat: 0.00
+                      goals: null
+                    message: ""
+                    errorList: []
+        "400":
+          description: Invalid date format or future date requested.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseEmpty"
+              example:
+                data: null
+                message: "Date cannot be in the future."
+                errorList: ["Date cannot be in the future."]
+        "401":
+          description: Missing or invalid authentication token.
+
+  /api/Diary/entries/{id}:
+    delete:
+      summary: Soft-delete a meal log entry
+      description: >
+        Marks the specified meal log entry as deleted. The entry must belong to the
+        authenticated user. The daily summary will exclude the entry immediately.
+        This operation is irreversible from the UI — deleted entries do not appear
+        in future diary queries.
+      operationId: deleteDiaryEntry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The ID of the MealLog entry to delete.
+      responses:
+        "204":
+          description: Entry deleted successfully. No response body.
+        "404":
+          description: Entry not found or does not belong to the authenticated user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceResponseEmpty"
+              example:
+                data: null
+                message: "Meal log entry not found."
+                errorList: ["Meal log entry not found."]
+        "401":
+          description: Missing or invalid authentication token.

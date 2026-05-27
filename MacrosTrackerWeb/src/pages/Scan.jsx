@@ -8,77 +8,6 @@ import { analyzeFood, logMeal } from "../api/foodScanClient";
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
-const previewImg = {
-  width: "100%",
-  maxHeight: 280,
-  objectFit: "cover",
-  borderRadius: 16,
-  border: "1px solid rgba(255,255,255,0.1)",
-  display: "block",
-  marginBottom: 16,
-};
-
-const uploadArea = {
-  padding: "28px 24px",
-  border: "2px dashed rgba(255,255,255,0.16)",
-  borderRadius: 18,
-  textAlign: "center",
-  cursor: "pointer",
-  marginBottom: 16,
-};
-
-const hiddenInput = { display: "none" };
-
-const spinnerStyle = {
-  display: "inline-block",
-  width: 20,
-  height: 20,
-  border: "2px solid rgba(255,255,255,0.15)",
-  borderTopColor: "#f6c567",
-  borderRadius: "50%",
-  animation: "spin 0.7s linear infinite",
-  marginRight: 10,
-  verticalAlign: "middle",
-};
-
-const errorBox = {
-  padding: "12px 16px",
-  borderRadius: 12,
-  background: "rgba(253,164,175,0.1)",
-  border: "1px solid rgba(253,164,175,0.25)",
-  color: "#fda4af",
-  fontSize: "0.9rem",
-  marginBottom: 16,
-};
-
-const successBox = {
-  padding: "16px 20px",
-  borderRadius: 14,
-  background: "rgba(134,239,172,0.1)",
-  border: "1px solid rgba(134,239,172,0.25)",
-  color: "#86efac",
-  fontWeight: 600,
-  marginBottom: 20,
-  textAlign: "center",
-};
-
-const divider = {
-  margin: "28px 0",
-  borderColor: "rgba(255,255,255,0.1)",
-};
-
-const linkButton = {
-  background: "none",
-  border: "none",
-  padding: 0,
-  color: "#f6c567",
-  cursor: "pointer",
-  textDecoration: "underline",
-  font: "inherit",
-};
-
-const muted = { color: "rgba(247,244,236,0.65)", fontSize: "0.9rem" };
-
 function ScanPage() {
   const [view, setView] = useState("scan");
 
@@ -204,185 +133,178 @@ function ScanPage() {
   }
 
   return (
-    <>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <PageShell
-        eyebrow="Core Flow"
-        title="Scan a meal"
-        description="Take a photo of your food to get instant calorie and macro information."
-      >
-        <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
-          <button
-            type="button"
-            onClick={() => setView("scan")}
-            className={view === "scan" ? "button-primary" : "button-secondary"}
-            style={{ fontSize: "0.9rem", minHeight: 40, padding: "0 18px" }}
-          >
-            Scan food
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("search")}
-            className={view === "search" ? "button-primary" : "button-secondary"}
-            style={{ fontSize: "0.9rem", minHeight: 40, padding: "0 18px" }}
-          >
-            Search manually
-          </button>
-        </div>
+    <PageShell
+      eyebrow="Core Flow"
+      title="Scan a meal"
+      description="Take a photo of your food to get instant calorie and macro information."
+    >
+      <div className="tab-row">
+        <button
+          type="button"
+          onClick={() => setView("scan")}
+          className={`tab-btn${view === "scan" ? " tab-btn--active" : ""}`}
+        >
+          Scan food
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("search")}
+          className={`tab-btn${view === "search" ? " tab-btn--active" : ""}`}
+        >
+          Search manually
+        </button>
+      </div>
 
-        {view === "scan" && (
-          <div>
-            {logSuccess && (
-              <div style={successBox}>
-                Meal logged ✓ — great work!{" "}
-                <button type="button" style={{ ...linkButton, color: "#86efac" }} onClick={handleDismiss}>
-                  Scan another
+      {view === "scan" && (
+        <div>
+          {logSuccess && (
+            <div className="alert alert--success">
+              Meal logged — great work!{" "}
+              <button
+                type="button"
+                className="link-btn"
+                onClick={handleDismiss}
+                style={{ color: "var(--success)" }}
+              >
+                Scan another
+              </button>
+            </div>
+          )}
+
+          {!result && !logSuccess && (
+            <>
+              {previewUrl ? (
+                <img src={previewUrl} alt="Food preview" className="preview-img" />
+              ) : (
+                <div
+                  className="upload-area"
+                  onClick={() => fileInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+                >
+                  <div className="upload-area__icon">📷</div>
+                  <p className="upload-area__hint">Tap to select a photo or use your camera</p>
+                </div>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+
+              {fileError && <div className="alert alert--error">{fileError}</div>}
+
+              {analyzeError && (
+                <div className="alert alert--error">
+                  {analyzeError}
+                  {isServiceDown && (
+                    <>{" "}<button type="button" className="link-btn" onClick={handleSearchManually}>
+                      Search manually instead
+                    </button></>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: "var(--sp-3)", flexWrap: "wrap", marginBottom: "var(--sp-4)" }}>
+                <button
+                  type="button"
+                  className="button-primary"
+                  onClick={handleAnalyze}
+                  disabled={!file || isAnalyzing}
+                >
+                  {isAnalyzing && <span className="spinner" />}
+                  {isAnalyzing ? "Analyzing your meal…" : "Analyze"}
                 </button>
-              </div>
-            )}
-
-            {!result && !logSuccess && (
-              <>
-                {previewUrl ? (
-                  <img src={previewUrl} alt="Food preview" style={previewImg} />
-                ) : (
-                  <div
-                    style={uploadArea}
-                    onClick={() => fileInputRef.current?.click()}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
-                  >
-                    <div style={{ fontSize: "2.4rem", marginBottom: 8 }}>📷</div>
-                    <p style={{ ...muted, margin: 0 }}>
-                      Tap to select a photo or use your camera
-                    </p>
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  style={hiddenInput}
-                  onChange={handleFileChange}
-                />
-
-                {fileError && <div style={errorBox}>{fileError}</div>}
-
-                {analyzeError && (
-                  <div style={errorBox}>
-                    {analyzeError}
-                    {isServiceDown && (
-                      <>
-                        {" "}
-                        <button type="button" style={linkButton} onClick={handleSearchManually}>
-                          Search manually instead
-                        </button>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+                {previewUrl && (
                   <button
                     type="button"
-                    className="button-primary"
-                    onClick={handleAnalyze}
-                    disabled={!file || isAnalyzing}
-                    style={{ opacity: !file || isAnalyzing ? 0.5 : 1 }}
+                    className="button-secondary"
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    {isAnalyzing && <span style={spinnerStyle} />}
-                    {isAnalyzing ? "Analyzing your meal…" : "Analyze"}
+                    Change photo
                   </button>
-                  {previewUrl && (
+                )}
+              </div>
+
+              <hr className="divider" />
+              <p className="text-muted">
+                Not getting good results?{" "}
+                <button type="button" className="link-btn" onClick={handleSearchManually}>
+                  Search manually instead
+                </button>
+              </p>
+            </>
+          )}
+
+          {result && !logSuccess && (
+            <>
+              <ScanResultCard
+                result={result}
+                onLog={() => setShowLogForm(true)}
+                onDismiss={handleDismiss}
+                onSearchManually={handleSearchManually}
+              />
+
+              {showLogForm && (
+                <div style={{ marginTop: "var(--sp-6)" }}>
+                  <p style={{ margin: "0 0 var(--sp-3)", fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--text-1)" }}>
+                    Select meal type
+                  </p>
+                  <MealTypeSelector
+                    selected={selectedMealType}
+                    onSelect={setSelectedMealType}
+                  />
+
+                  {logError && (
+                    <div className="alert alert--error" style={{ marginTop: "var(--sp-3)" }}>{logError}</div>
+                  )}
+
+                  <div style={{ display: "flex", gap: "var(--sp-3)", marginTop: "var(--sp-5)" }}>
+                    <button
+                      type="button"
+                      className="button-primary"
+                      onClick={handleConfirmLog}
+                      disabled={!selectedMealType || isLogging}
+                    >
+                      {isLogging ? "Logging…" : "Confirm & Log"}
+                    </button>
                     <button
                       type="button"
                       className="button-secondary"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => {
+                        setShowLogForm(false);
+                        setSelectedMealType(null);
+                        setLogError(null);
+                      }}
                     >
-                      Change photo
+                      Cancel
                     </button>
-                  )}
-                </div>
-
-                <hr style={divider} />
-                <p style={muted}>
-                  Not getting good results?{" "}
-                  <button type="button" style={linkButton} onClick={handleSearchManually}>
-                    Search manually instead
-                  </button>
-                </p>
-              </>
-            )}
-
-            {result && !logSuccess && (
-              <>
-                <ScanResultCard
-                  result={result}
-                  onLog={() => setShowLogForm(true)}
-                  onDismiss={handleDismiss}
-                  onSearchManually={handleSearchManually}
-                />
-
-                {showLogForm && (
-                  <div style={{ marginTop: 24 }}>
-                    <p style={{ margin: "0 0 12px", fontWeight: 600 }}>Select meal type</p>
-                    <MealTypeSelector
-                      selected={selectedMealType}
-                      onSelect={setSelectedMealType}
-                    />
-
-                    {logError && (
-                      <p style={{ color: "#fda4af", fontSize: "0.9rem", marginTop: 12 }}>
-                        {logError}
-                      </p>
-                    )}
-
-                    <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-                      <button
-                        type="button"
-                        className="button-primary"
-                        onClick={handleConfirmLog}
-                        disabled={!selectedMealType || isLogging}
-                        style={{ opacity: !selectedMealType || isLogging ? 0.5 : 1 }}
-                      >
-                        {isLogging ? "Logging…" : "Confirm & Log"}
-                      </button>
-                      <button
-                        type="button"
-                        className="button-secondary"
-                        onClick={() => {
-                          setShowLogForm(false);
-                          setSelectedMealType(null);
-                          setLogError(null);
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
                   </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
-        {view === "search" && (
-          <div>
-            <FoodSearchPanel />
-            <hr style={divider} />
-            <p style={muted}>
-              Have a photo?{" "}
-              <button type="button" style={linkButton} onClick={() => setView("scan")}>
-                Scan your meal instead
-              </button>
-            </p>
-          </div>
-        )}
-      </PageShell>
-    </>
+      {view === "search" && (
+        <div>
+          <FoodSearchPanel />
+          <hr className="divider" />
+          <p className="text-muted">
+            Have a photo?{" "}
+            <button type="button" className="link-btn" onClick={() => setView("scan")}>
+              Scan your meal instead
+            </button>
+          </p>
+        </div>
+      )}
+    </PageShell>
   );
 }
 
