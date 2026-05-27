@@ -6,4 +6,5 @@ namespace GymScan.Services.Features.FoodSearch;
 public interface IFoodSearchService
 {
     Task<ServiceResponse<List<FoodSearchResultDto>>> SearchAsync(string query);
+    Task<ServiceResponse<List<RecentFoodDto>>> GetRecentFoodsAsync(Guid userId);
 }

@@ -5,6 +5,7 @@ import { useAuthStore } from "../store/authStore";
 const navLinks = [
   { to: "/dashboard", label: "Dashboard" },
   { to: "/scan", label: "Scan" },
+  { to: "/log", label: "Log Food" },
   { to: "/history", label: "History" },
 ];
 

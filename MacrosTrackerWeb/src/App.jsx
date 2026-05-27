@@ -7,6 +7,7 @@ import HistoryPage from "./pages/History";
 import HomePage from "./pages/Home";
 import LoadingPage from "./pages/Loading";
 import LoginPage from "./pages/Login";
+import ManualLogPage from "./pages/ManualLog";
 import NotFoundPage from "./pages/NotFound";
 import ProfileSetupPage from "./pages/ProfileSetup";
 import RegisterPage from "./pages/Register";
@@ -57,6 +58,14 @@ function App() {
         element={
           <ProtectedRoute>
             <HistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/log"
+        element={
+          <ProtectedRoute>
+            <ManualLogPage />
           </ProtectedRoute>
         }
       />

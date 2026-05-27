@@ -32,4 +32,26 @@ public sealed class FoodSearchService : IFoodSearchService
 
         return ServiceResponse<List<FoodSearchResultDto>>.Success(dtos, $"Found {dtos.Count} result(s).");
     }
+
+    public async Task<ServiceResponse<List<RecentFoodDto>>> GetRecentFoodsAsync(Guid userId)
+    {
+        var cutoff = DateTime.UtcNow.AddDays(-30);
+
+        var logs = await _db.MealLogs
+            .AsNoTracking()
+            .Where(m => m.UserId == userId && m.LocalFoodItemId != null && m.LoggedAt >= cutoff)
+            .Include(m => m.LocalFoodItem)
+            .OrderByDescending(m => m.LoggedAt)
+            .ToListAsync();
+
+        var dtos = logs
+            .GroupBy(m => m.LocalFoodItemId)
+            .Select(g => g.First())
+            .Take(10)
+            .Where(m => m.LocalFoodItem != null)
+            .Select(m => m.LocalFoodItem!.ToRecentFoodDto(m.ServingSizeGrams ?? m.LocalFoodItem!.TypicalServingSizeGrams))
+            .ToList();
+
+        return ServiceResponse<List<RecentFoodDto>>.Success(dtos, $"Found {dtos.Count} recent food(s).");
+    }
 }
