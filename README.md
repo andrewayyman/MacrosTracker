@@ -15,13 +15,6 @@ MacrosTracker helps users:
 - **Frontend**: React 18, TypeScript, Zustand, Vite
 - **Development**: Claude Code + Spec Kit (AI-assisted, spec-driven)
 
-## Stack
-
-```
-70.8% JavaScript
-18.1% C#
-11.1% Other (PowerShell, CSS, Shell)
-```
 
 ## Architecture
 
@@ -68,13 +61,3 @@ Example: See `specs/008-user-nutrition-goals/` for a complete feature spec.
 - 🤖 **AI-Generated Code** – Consistent architecture across features
 - 📋 **Spec-Driven** – Every feature documented before coding
 
-## Contributing
-
-1. Create a spec in `specs/XXX-feature-name/`
-2. Follow the N-tier architecture
-3. Use Claude Code for implementation
-4. Test and submit PR
-
-## License
-
-MIT
