@@ -8,6 +8,7 @@ import HomePage from "./pages/Home";
 import LoadingPage from "./pages/Loading";
 import LoginPage from "./pages/Login";
 import ManualLogPage from "./pages/ManualLog";
+import MyGoalPage from "./pages/MyGoal";
 import NotFoundPage from "./pages/NotFound";
 import ProfileSetupPage from "./pages/ProfileSetup";
 import ProgressPage from "./pages/Progress";
@@ -43,6 +44,14 @@ function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-goal"
+        element={
+          <ProtectedRoute>
+            <MyGoalPage />
           </ProtectedRoute>
         }
       />

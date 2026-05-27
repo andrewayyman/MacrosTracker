@@ -26,6 +26,8 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<MealLog> MealLogs => Set<MealLog>();
 
+    public DbSet<UserGoalProfile> UserGoalProfiles => Set<UserGoalProfile>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

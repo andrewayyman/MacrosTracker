@@ -8,6 +8,7 @@ const navLinks = [
   { to: "/log", label: "Log Food" },
   { to: "/history", label: "History" },
   { to: "/progress", label: "Progress" },
+  { to: "/my-goal", label: "My Goal" },
 ];
 
 function PageShell({ eyebrow, title, description, children }) {
