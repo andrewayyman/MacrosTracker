@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan at
-`specs/007-progress-dashboard/plan.md`.
+`specs/008-user-nutrition-goals/plan.md`.
 
 Architecture standard for future backend work in this repository:
 - Follow a clean N-tier modular monolith structure.
