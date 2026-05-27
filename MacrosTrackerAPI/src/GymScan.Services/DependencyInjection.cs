@@ -4,6 +4,7 @@ using GymScan.Services.Features.FoodScan;
 using GymScan.Services.Features.FoodSearch;
 using GymScan.Services.Features.NutritionGoals;
 using GymScan.Services.Features.Profile;
+using GymScan.Services.Features.Progress;
 using GymScan.Services.Security;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<IFoodScanService, FoodScanService>();
         services.AddScoped<IFoodSearchService, FoodSearchService>();
         services.AddScoped<IDiaryService, DiaryService>();
+        services.AddScoped<IProgressService, ProgressService>();
 
         return services;
     }
