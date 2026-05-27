@@ -23,25 +23,6 @@ N-tier modular monolith:
 - **Service Layer**: Business logic & calculations
 - **Data Layer**: EF Core + SQL Server
 
-## Quick Start
-
-### Backend
-```bash
-cd MacrosTrackerAPI
-dotnet restore
-dotnet ef database update
-dotnet run --project src/GymScan.API
-# API: https://localhost:7001
-```
-
-### Frontend
-```bash
-cd MacrosTrackerWeb
-npm install
-npm run dev
-# Frontend: http://localhost:5173
-```
-
 ## How We Build
 
 We use **Spec Kit** for spec-driven development and **Claude Code** for AI-assisted implementation:
