@@ -14,79 +14,37 @@ import ProfileSetupPage from "./pages/ProfileSetup";
 import ProgressPage from "./pages/Progress";
 import RegisterPage from "./pages/Register";
 import ScanPage from "./pages/Scan";
+import DashboardLayout from "./layouts/DashboardLayout";
+import PublicLayout from "./layouts/PublicLayout";
 
 function App() {
   useAuthBootstrap();
 
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
+
       <Route
-        path="/profile-setup"
         element={
           <ProtectedRoute>
-            <ProfileSetupPage />
+            <DashboardLayout />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/goal-setup"
-        element={
-          <ProtectedRoute>
-            <GoalSetupPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/my-goal"
-        element={
-          <ProtectedRoute>
-            <MyGoalPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/scan"
-        element={
-          <ProtectedRoute>
-            <ScanPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/history"
-        element={
-          <ProtectedRoute>
-            <HistoryPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/log"
-        element={
-          <ProtectedRoute>
-            <ManualLogPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/progress"
-        element={
-          <ProtectedRoute>
-            <ProgressPage />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route path="/profile-setup" element={<ProfileSetupPage />} />
+        <Route path="/goal-setup" element={<GoalSetupPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/my-goal" element={<MyGoalPage />} />
+        <Route path="/scan" element={<ScanPage />} />
+        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/log" element={<ManualLogPage />} />
+        <Route path="/progress" element={<ProgressPage />} />
+      </Route>
+
       <Route path="/loading" element={<LoadingPage />} />
       <Route path="/home" element={<Navigate to="/" replace />} />
       <Route path="*" element={<NotFoundPage />} />

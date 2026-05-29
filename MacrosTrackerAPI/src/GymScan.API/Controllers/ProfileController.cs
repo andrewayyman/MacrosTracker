@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GymScan.API.Controllers;
 
+[Route("api/profile")]
 public sealed class ProfileController : ApiControllerBase
 {
     private readonly IProfileService _profileService;
@@ -18,7 +19,7 @@ public sealed class ProfileController : ApiControllerBase
     }
 
     [AppAuthorize]
-    [HttpGet]
+    [HttpGet("setup")]
     public async Task<ActionResult<ServiceResponse<SetupSummaryDto>>> GetSetupSummary(CancellationToken cancellationToken)
     {
         var response = await _profileService.GetSetupSummaryAsync(cancellationToken);

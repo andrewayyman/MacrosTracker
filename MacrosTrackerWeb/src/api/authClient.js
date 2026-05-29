@@ -2,7 +2,7 @@ import axios from "axios";
 import { getAccessToken } from "../utils/storage";
 
 const authTransport = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:5000",
+  baseURL: import.meta.env.VITE_API_URL ?? "https://localhost:7159",
 });
 
 export async function registerUser(payload) {

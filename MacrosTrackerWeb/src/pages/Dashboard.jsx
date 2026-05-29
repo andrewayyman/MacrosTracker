@@ -1,152 +1,80 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { 
+  Flame, 
+  Droplets, 
+  Scale, 
+  Sparkles, 
+  Camera, 
+  Search, 
+  Trash2, 
+  CheckCircle2, 
+  TrendingUp, 
+  Plus, 
+  Minus, 
+  Calendar,
+  ChevronRight,
+  Info,
+  Beef,
+  Wheat,
+  Pizza
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ReferenceLine,
+  ResponsiveContainer,
+  CartesianGrid
+} from "recharts";
+
 import PageShell from "../components/PageShell";
 import { useAuthStore } from "../store/authStore";
-import { getDiary } from "../api/diaryClient";
-import { getProgressStreaks } from "../api/progressClient";
-import { getRecentFoods } from "../api/nutritionLogClient";
+import { getDiary, deleteDiaryEntry } from "../api/diaryClient";
+import { getProgressStreaks, getProgressTrends } from "../api/progressClient";
+import { getProfile, upsertProfile } from "../api/profileClient";
 
-function CalorieBar({ consumed, goal }) {
-  if (!goal) return null;
-  const pct = Math.min((consumed / goal) * 100, 100);
-  const isOver = consumed > goal;
-  return (
-    <div className="dash-cal-bar">
-      <div
-        className={`dash-cal-bar__fill${isOver ? " dash-cal-bar__fill--over" : ""}`}
-        style={{ width: `${pct}%` }}
-      />
-    </div>
-  );
+// Helpers
+function formatDate(isoDate) {
+  const d = new Date(isoDate + "T00:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
-function MacroPill({ label, consumed, goal }) {
-  const pct = goal > 0 ? Math.round((consumed / goal) * 100) : null;
-  const isOver = goal > 0 && consumed > goal;
-  return (
-    <div className="dash-macro-pill">
-      <span className="dash-macro-pill__label">{label}</span>
-      <span className={`dash-macro-pill__value${isOver ? " dash-macro-pill__value--over" : ""}`}>
-        {Math.round(consumed)}g
-      </span>
-      {goal > 0 && (
-        <span className="dash-macro-pill__pct">{pct}%</span>
-      )}
-    </div>
-  );
+function formatChartDate(isoDate) {
+  const d = new Date(isoDate + "T00:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short" });
 }
 
-function TodayCard({ data }) {
-  const { dailySummary: s, goals: g } = data;
-  const hasGoal = !!g;
-  const hasFood = s.totalCalories > 0;
-  const remaining = hasGoal ? g.caloriesTarget - s.totalCalories : null;
-  const isOver = remaining !== null && remaining < 0;
-
-  return (
-    <div className="dash-today-card">
-      <div className="dash-today-card__header">
-        <span className="dash-today-card__eyebrow">Today</span>
-        <Link to="/progress" className="dash-today-card__link">Full breakdown →</Link>
-      </div>
-
-      <div className="dash-today-card__cal-row">
-        <span className="dash-today-card__cal-num">
-          {Math.round(s.totalCalories).toLocaleString()}
-        </span>
-        <span className="dash-today-card__cal-unit">
-          {hasGoal ? `/ ${g.caloriesTarget.toLocaleString()} kcal` : "kcal logged"}
-        </span>
-      </div>
-
-      {hasGoal && <CalorieBar consumed={s.totalCalories} goal={g.caloriesTarget} />}
-
-      {hasGoal && hasFood && (
-        <p className="dash-today-card__remaining">
-          {isOver
-            ? `${Math.abs(remaining).toLocaleString()} kcal over goal`
-            : `${remaining.toLocaleString()} kcal remaining`}
-        </p>
-      )}
-
-      {!hasFood && (
-        <p className="dash-today-card__hint">No food logged yet today.</p>
-      )}
-
-      {hasFood && (
-        <div className="dash-macro-row">
-          <MacroPill label="Protein" consumed={s.totalProtein} goal={g?.proteinTarget ?? 0} />
-          <MacroPill label="Carbs" consumed={s.totalCarbs} goal={g?.carbsTarget ?? 0} />
-          <MacroPill label="Fat" consumed={s.totalFat} goal={g?.fatTarget ?? 0} />
-        </div>
-      )}
-
-      {!hasGoal && (
-        <p className="dash-today-card__no-goal">
-          <Link to="/goal-setup">Set a nutrition goal</Link> to see your progress.
-        </p>
-      )}
-    </div>
-  );
-}
-
-function StreakCard({ data }) {
-  const { currentStreak, goalHitRate, hasGoal } = data;
-  if (!hasGoal) {
-    return (
-      <div className="dash-insight-card">
-        <span className="dash-insight-card__title">Streak</span>
-        <p className="dash-insight-card__empty">
-          <Link to="/goal-setup">Set goals</Link> to track your streak.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div className="dash-insight-card">
-      <span className="dash-insight-card__title">Streak</span>
-      <div className="dash-streak">
-        <span className="dash-streak__num">{currentStreak}</span>
-        <span className="dash-streak__label">day{currentStreak !== 1 ? "s" : ""}</span>
-      </div>
-      <p className="dash-streak__rate">{goalHitRate}% hit rate (30d)</p>
-      <Link to="/progress?tab=streaks" className="dash-insight-card__more">View heatmap →</Link>
-    </div>
-  );
-}
-
-function RecentFoodsCard({ data }) {
-  const foods = data.slice(0, 4);
-  if (foods.length === 0) {
-    return (
-      <div className="dash-insight-card">
-        <span className="dash-insight-card__title">Recent Foods</span>
-        <p className="dash-insight-card__empty">No recent foods yet.</p>
-      </div>
-    );
-  }
-  return (
-    <div className="dash-insight-card">
-      <span className="dash-insight-card__title">Recent Foods</span>
-      <ul className="dash-recent-list">
-        {foods.map((food) => (
-          <li key={food.id} className="dash-recent-item">
-            <span className="dash-recent-item__name">{food.name}</span>
-            <span className="dash-recent-item__cal">{Math.round(food.caloriesPerServing)} kcal</span>
-          </li>
-        ))}
-      </ul>
-      <Link to="/log" className="dash-insight-card__more">Log food →</Link>
-    </div>
-  );
-}
-
-function DashboardPage() {
+export default function DashboardPage() {
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
 
+  // States for Water & Weight
+  const [waterCups, setWaterCups] = useState(0);
+  const [inputWeight, setInputWeight] = useState("");
+  const [showWeightToast, setShowWeightToast] = useState(false);
+
+  // Formatted date string for local water tracking key
+  const todayStr = new Date().toISOString().split("T")[0];
+  const waterKey = `water_logged_${todayStr}`;
+
+  // Load water intake from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(waterKey);
+    if (saved) {
+      setWaterCups(parseInt(saved, 10));
+    } else {
+      setWaterCups(0);
+    }
+  }, [waterKey]);
+
+  // Queries
   const todayQuery = useQuery({
     queryKey: ["diary-today"],
-    queryFn: () => getDiary().then(r => r.data.data),
+    queryFn: () => getDiary().then((r) => r.data.data),
   });
 
   const streaksQuery = useQuery({
@@ -154,61 +82,599 @@ function DashboardPage() {
     queryFn: getProgressStreaks,
   });
 
-  const recentQuery = useQuery({
-    queryKey: ["recent-foods"],
-    queryFn: getRecentFoods,
+  const trendsQuery = useQuery({
+    queryKey: ["progress-trends-7"],
+    queryFn: () => getProgressTrends(7),
   });
+
+  const profileQuery = useQuery({
+    queryKey: ["profile-details"],
+    queryFn: () => getProfile().then((r) => r.data),
+  });
+
+  // Prefill input weight once profile query completes
+  useEffect(() => {
+    if (profileQuery.data?.WeightKg) {
+      setInputWeight(profileQuery.data.WeightKg.toString());
+    }
+  }, [profileQuery.data]);
+
+  // Deletion Mutation for Food Entries
+  const deleteMutation = useMutation({
+    mutationFn: (id) => deleteDiaryEntry(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["diary-today"] });
+      queryClient.invalidateQueries({ queryKey: ["progress-trends-7"] });
+    },
+  });
+
+  // Weight Update Mutation
+  const weightMutation = useMutation({
+    mutationFn: (newWeight) => {
+      const currentProfile = profileQuery.data;
+      const payload = {
+        firstName: currentProfile?.FirstName || user?.firstName || "there",
+        lastName: currentProfile?.LastName || user?.lastName || "",
+        weightKg: parseFloat(newWeight),
+        heightCm: currentProfile?.HeightCm || 175,
+        age: currentProfile?.Age || 25,
+        gender: currentProfile?.Gender || "Male",
+      };
+      return upsertProfile(payload);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile-details"] });
+      setShowWeightToast(true);
+      setTimeout(() => setShowWeightToast(false), 3000);
+    },
+  });
+
+  // Handler for saving water
+  const handleWaterChange = (newVal) => {
+    const clamped = Math.max(0, Math.min(16, newVal));
+    setWaterCups(clamped);
+    localStorage.setItem(waterKey, clamped.toString());
+  };
+
+  // Handler for saving weight
+  const handleWeightSubmit = (e) => {
+    e.preventDefault();
+    if (!inputWeight || isNaN(parseFloat(inputWeight))) return;
+    weightMutation.mutate(inputWeight);
+  };
+
+  // Loading Skeleton
+  const isLoading = todayQuery.isLoading || streaksQuery.isLoading || profileQuery.isLoading || trendsQuery.isLoading;
+
+  if (isLoading) {
+    return (
+      <PageShell>
+        <div className="skeleton-dashboard">
+          <div className="skeleton-box skeleton-header" />
+          <div className="skeleton-box skeleton-chart" />
+          <div className="skeleton-box skeleton-widget" />
+          <div className="skeleton-box skeleton-row" />
+          <div className="skeleton-box skeleton-row" />
+        </div>
+      </PageShell>
+    );
+  }
+
+  // Data mapping
+  const diaryData = todayQuery.data || { dailySummary: {}, mealGroups: [] };
+  const summary = diaryData.dailySummary || { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 };
+  const goal = diaryData.goals || null;
+
+  const currentWeight = profileQuery.data?.WeightKg || user?.weightKg || 80;
+
+  // Calorie Ring Calculations
+  const consumedCal = Math.round(summary.totalCalories || 0);
+  const targetCal = goal?.caloriesTarget || 2000;
+  const calPct = Math.min((consumedCal / targetCal) * 100, 100);
+  const remainingCal = targetCal - consumedCal;
+  const isCalOver = remainingCal < 0;
+
+  // SVG Ring values
+  const radius = 70;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (calPct / 100) * circumference;
+
+  // Macro progress bars
+  const pConsumed = summary.totalProtein || 0;
+  const pTarget = goal?.proteinTarget || 120;
+  const pPct = pTarget > 0 ? Math.min((pConsumed / pTarget) * 100, 100) : 0;
+  const pOver = pConsumed > pTarget;
+
+  const cConsumed = summary.totalCarbs || 0;
+  const cTarget = goal?.carbsTarget || 200;
+  const cPct = cTarget > 0 ? Math.min((cConsumed / cTarget) * 100, 100) : 0;
+  const cOver = cConsumed > cTarget;
+
+  const fConsumed = summary.totalFat || 0;
+  const fTarget = goal?.fatTarget || 70;
+  const fPct = fTarget > 0 ? Math.min((fConsumed / fTarget) * 100, 100) : 0;
+  const fOver = fConsumed > fTarget;
+
+  // AI Nutrition Coach Logic
+  let aiHeadline = "You're on track!";
+  let aiText = "Maintain a steady intake of protein and stay hydrated. You are doing fantastic today!";
+
+  if (consumedCal === 0) {
+    aiHeadline = "Ready to start your day?";
+    aiText = "Your nutrition diary is empty. Scan your breakfast with AI or search for logged foods manually to start tracking!";
+  } else if (pPct < 50 && remainingCal > 0) {
+    aiHeadline = "Boost your protein intake";
+    aiText = `You've reached only ${Math.round(pPct)}% of your protein goal. Focus on adding lean meat, fish, eggs, or Greek yogurt to fuel your muscle recovery.`;
+  } else if (isCalOver) {
+    aiHeadline = "Calorie target exceeded";
+    aiText = "You've gone slightly over your daily calorie allowance. For remaining meals, prioritize low-calorie, high-volume vegetables and lots of water.";
+  } else if (waterCups < 4) {
+    aiHeadline = "Stay Hydrated";
+    aiText = `You've only logged ${waterCups} cups of water. Hydration is key to high metabolism and muscle stamina. Try to reach at least 8 cups today!`;
+  } else if (pPct >= 80 && calPct < 90) {
+    aiHeadline = "Excellent fuel efficiency!";
+    aiText = "Outstanding job meeting your protein target while maintaining a healthy calorie deficit. Keep up this high-quality nutrition rhythm.";
+  }
+
+  // Active Streak details
+  const currentStreak = streaksQuery.data?.currentStreak ?? 0;
+  const hitRate = streaksQuery.data?.goalHitRate ?? 0;
+
+  // 7-day calories trend mapping
+  const chartDays = trendsQuery.data?.Days || [];
+  const chartGoals = trendsQuery.data?.Goals?.caloriesTarget || targetCal;
 
   return (
     <PageShell>
-      <div className="dash-greeting">
-        <span className="dash-greeting__eyebrow">Welcome back</span>
-        <h1 className="dash-greeting__name">{user?.firstName || "there"}</h1>
-        <p className="dash-greeting__sub">Here&apos;s how you&apos;re doing today.</p>
-      </div>
+      <div className="premium-dash-grid">
+        
+        {/* Modern Interactive Greeting */}
+        <section className="premium-greeting">
+          <div className="premium-greeting__info">
+            <span className="eyebrow" style={{ marginBottom: '4px' }}>Welcome back</span>
+            <h1 className="premium-greeting__title">{profileQuery.data?.FirstName || user?.firstName || "there"}</h1>
+            <p className="premium-greeting__sub">Here is your daily fitness and macro roadmap at a glance.</p>
+          </div>
+          <div className="premium-greeting__date">
+            <Calendar size={16} />
+            <span>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}</span>
+          </div>
+        </section>
 
-      {/* Today at a glance */}
-      {todayQuery.isLoading && <div className="dash-skeleton" />}
-      {todayQuery.data && <TodayCard data={todayQuery.data} />}
+        {/* AI Health Coach Banner */}
+        <section className="ai-recommendations-card">
+          <div className="ai-recommendations-card__icon-wrapper">
+            <Sparkles size={24} />
+          </div>
+          <div className="ai-recommendations-card__content">
+            <h3 className="ai-recommendations-card__headline">{aiHeadline}</h3>
+            <p className="ai-recommendations-card__text">{aiText}</p>
+          </div>
+        </section>
 
-      {/* Insights row */}
-      <div className="dash-insights-row">
-        <div className="dash-insight-col">
-          {streaksQuery.isLoading && <div className="dash-insight-card dash-insight-card--loading" />}
-          {streaksQuery.data && <StreakCard data={streaksQuery.data} />}
-        </div>
-        <div className="dash-insight-col">
-          {recentQuery.isLoading && <div className="dash-insight-card dash-insight-card--loading" />}
-          {recentQuery.data && <RecentFoodsCard data={recentQuery.data} />}
-        </div>
-      </div>
+        {/* Circular Calories Widget */}
+        <section className="premium-card calorie-circle-card">
+          <div className="premium-card__header">
+            <div className="premium-card__title-area">
+              <span className="premium-card__icon"><Flame size={18} /></span>
+              <h2 className="premium-card__title">Calories Progress</h2>
+            </div>
+            <Link to="/progress" className="premium-card__link">Analysis</Link>
+          </div>
 
-      {/* Quick actions */}
-      <div className="dash-actions">
-        <Link to="/scan" className="dash-action dash-action--primary">
-          <span className="dash-action__label">Scan Food</span>
-          <span className="dash-action__sub">Identify your meal with AI</span>
-        </Link>
-        <Link to="/log" className="dash-action">
-          <span className="dash-action__label">Log Manually</span>
-          <span className="dash-action__sub">Search and add any food item</span>
-        </Link>
-        <Link to="/history" className="dash-action">
-          <span className="dash-action__label">Meal History</span>
-          <span className="dash-action__sub">Review past days</span>
-        </Link>
-        <Link to="/progress" className="dash-action">
-          <span className="dash-action__label">Progress</span>
-          <span className="dash-action__sub">Charts, trends and streaks</span>
-        </Link>
-      </div>
+          <div className="calorie-progress-layout">
+            <div className="calorie-circle-wrapper">
+              <svg className="calorie-circle-svg" width="160" height="160">
+                <circle
+                  className="calorie-circle-bg"
+                  cx="80"
+                  cy="80"
+                  r={radius}
+                />
+                <circle
+                  className={`calorie-circle-fill${isCalOver ? " calorie-circle-fill--over" : ""}`}
+                  cx="80"
+                  cy="80"
+                  r={radius}
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                />
+              </svg>
+              <div className="calorie-circle-text-container">
+                <span className="calorie-circle-val">{consumedCal}</span>
+                <span className="calorie-circle-label">kcal</span>
+              </div>
+            </div>
 
-      <div className="dash-meta">
-        <Link to="/profile-setup" className="dash-meta__link">Edit profile</Link>
-        <Link to="/goal-setup" className="dash-meta__link">Nutrition goals</Link>
+            <div className="calorie-details-grid">
+              <div className="calorie-detail-item">
+                <span className="calorie-detail-item__label">
+                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)' }} />
+                  Target Goal
+                </span>
+                <span className="calorie-detail-item__val">{targetCal} kcal</span>
+              </div>
+              <div className="calorie-detail-item">
+                <span className="calorie-detail-item__label">
+                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: isCalOver ? 'var(--error)' : 'var(--text-3)' }} />
+                  {isCalOver ? "Over Limit" : "Remaining"}
+                </span>
+                <span className="calorie-detail-item__val" style={{ color: isCalOver ? 'var(--error)' : 'inherit' }}>
+                  {Math.abs(remainingCal)} kcal
+                </span>
+              </div>
+              <div className="calorie-detail-item">
+                <span className="calorie-detail-item__label">
+                  <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-3)' }} />
+                  Streak Hit Rate
+                </span>
+                <span className="calorie-detail-item__val">{hitRate}% ({currentStreak}d streak)</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Macros Progress Card */}
+        <section className="premium-card macros-card">
+          <div className="premium-card__header">
+            <div className="premium-card__title-area">
+              <span className="premium-card__icon"><Pizza size={18} /></span>
+              <h2 className="premium-card__title">Macros Breakdown</h2>
+            </div>
+            <Link to="/my-goal" className="premium-card__link">Edit Goals</Link>
+          </div>
+
+          <div className="macros-container">
+            {/* Protein */}
+            <div className="premium-macro-bar">
+              <div className="premium-macro-bar__header">
+                <span className="premium-macro-bar__name">
+                  <span className="premium-macro-bar__name-icon premium-macro-bar__name-icon--protein">
+                    <Beef size={12} />
+                  </span>
+                  Protein
+                </span>
+                <span className="premium-macro-bar__values">
+                  {Math.round(pConsumed)}g / {pTarget}g ({Math.round(pPct)}%)
+                </span>
+              </div>
+              <div className="premium-macro-bar__track">
+                <div 
+                  className={`premium-macro-bar__fill premium-macro-bar__fill--protein${pOver ? " premium-macro-bar__fill--over" : ""}`}
+                  style={{ width: `${pPct}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Carbohydrates */}
+            <div className="premium-macro-bar">
+              <div className="premium-macro-bar__header">
+                <span className="premium-macro-bar__name">
+                  <span className="premium-macro-bar__name-icon premium-macro-bar__name-icon--carbs">
+                    <Wheat size={12} />
+                  </span>
+                  Carbs
+                </span>
+                <span className="premium-macro-bar__values">
+                  {Math.round(cConsumed)}g / {cTarget}g ({Math.round(cPct)}%)
+                </span>
+              </div>
+              <div className="premium-macro-bar__track">
+                <div 
+                  className={`premium-macro-bar__fill premium-macro-bar__fill--carbs${cOver ? " premium-macro-bar__fill--over" : ""}`}
+                  style={{ width: `${cPct}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Fats */}
+            <div className="premium-macro-bar">
+              <div className="premium-macro-bar__header">
+                <span className="premium-macro-bar__name">
+                  <span className="premium-macro-bar__name-icon premium-macro-bar__name-icon--fat">
+                    <Flame size={12} />
+                  </span>
+                  Fat
+                </span>
+                <span className="premium-macro-bar__values">
+                  {Math.round(fConsumed)}g / {fTarget}g ({Math.round(fPct)}%)
+                </span>
+              </div>
+              <div className="premium-macro-bar__track">
+                <div 
+                  className={`premium-macro-bar__fill premium-macro-bar__fill--fat${fOver ? " premium-macro-bar__fill--over" : ""}`}
+                  style={{ width: `${fPct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Weekly Stats Calories Chart */}
+        <section className="premium-card weekly-stats-card">
+          <div className="premium-card__header">
+            <div className="premium-card__title-area">
+              <span className="premium-card__icon"><TrendingUp size={18} /></span>
+              <h2 className="premium-card__title">Weekly Calories Summary</h2>
+            </div>
+            <Link to="/progress" className="premium-card__link">Details</Link>
+          </div>
+
+          <div style={{ flex: 1, minHeight: "220px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            {chartDays.length === 0 ? (
+              <div style={{ textAlign: "center", color: "var(--text-3)", padding: "40px 0" }}>
+                No progress log trends found yet.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={chartDays} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis 
+                    dataKey="Date" 
+                    tickFormatter={formatChartDate} 
+                    tick={{ fill: "var(--text-2)", fontSize: 11, fontWeight: 500 }} 
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis 
+                    tick={{ fill: "var(--text-2)", fontSize: 11 }} 
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ 
+                      background: "var(--surface)", 
+                      border: "1px solid var(--border)", 
+                      borderRadius: "var(--radius-md)",
+                      boxShadow: "var(--shadow-md)"
+                    }}
+                    labelStyle={{ fontWeight: "700", color: "var(--text-1)", fontSize: "12px", marginBottom: "4px" }}
+                    itemStyle={{ color: "var(--accent)", fontSize: "12px" }}
+                    labelFormatter={(v) => formatDate(v)}
+                    formatter={(value) => [`${Math.round(value)} kcal`, "Intake"]}
+                  />
+                  <Bar dataKey="Calories" fill="var(--accent)" radius={[4, 4, 0, 0]} barSize={28} />
+                  {chartGoals != null && (
+                    <ReferenceLine 
+                      y={chartGoals} 
+                      stroke="var(--error)" 
+                      strokeDasharray="4 4" 
+                      label={{ 
+                        value: "Daily Goal", 
+                        position: "insideTopRight", 
+                        fill: "var(--error)", 
+                        fontSize: 10, 
+                        fontWeight: 600,
+                        offset: 5
+                      }} 
+                    />
+                  )}
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </section>
+
+        {/* Water Hydration Intake Tracker */}
+        <section className="premium-card water-intake-card">
+          <div className="premium-card__header">
+            <div className="premium-card__title-area">
+              <span className="premium-card__icon"><Droplets size={18} /></span>
+              <h2 className="premium-card__title">Hydration Tracker</h2>
+            </div>
+            <span style={{ fontSize: "11px", fontWeight: "600", color: "var(--text-3)" }}>Goal: 8 cups</span>
+          </div>
+
+          <div className="water-content">
+            <div className="water-visual-container">
+              <div 
+                className="water-visual-fill" 
+                style={{ height: `${Math.min((waterCups / 8) * 100, 100)}%` }}
+              >
+                {waterCups > 0 && <div className="water-visual-wave" />}
+              </div>
+            </div>
+
+            <div className="water-text-display">
+              <span className="water-amount">{waterCups} <span style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-2)" }}>/ 8 cups</span></span>
+              <span className="water-target-label">{waterCups * 250} ml logged today</span>
+            </div>
+
+            <div className="water-grid-cups">
+              {[...Array(8)].map((_, i) => (
+                <button
+                  key={i}
+                  className={`water-cup-btn${i < waterCups ? " water-cup-btn--active" : ""}`}
+                  onClick={() => handleWaterChange(i + 1 === waterCups ? i : i + 1)}
+                  aria-label={`Log ${i + 1} cup of water`}
+                >
+                  <Droplets size={14} fill={i < waterCups ? "currentColor" : "none"} />
+                </button>
+              ))}
+            </div>
+
+            <div className="water-quick-actions">
+              <button className="water-btn-adjust" onClick={() => handleWaterChange(waterCups - 1)}>
+                <Minus size={14} />
+                <span>Remove</span>
+              </button>
+              <button className="water-btn-adjust" onClick={() => handleWaterChange(waterCups + 1)}>
+                <Plus size={14} />
+                <span>Add Cup</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Weight Log Tracker Widget */}
+        <section className="premium-card weight-stats-card">
+          <div className="premium-card__header">
+            <div className="premium-card__title-area">
+              <span className="premium-card__icon"><Scale size={18} /></span>
+              <h2 className="premium-card__title">Weight Log</h2>
+            </div>
+            <Link to="/progress?tab=trends" className="premium-card__link">History</Link>
+          </div>
+
+          <div className="weight-content">
+            <div className="weight-row-main">
+              <div className="weight-badge">
+                <span className="weight-val">{currentWeight}</span>
+                <span className="weight-unit">kg current</span>
+              </div>
+              <span className="weight-change-indicator weight-change-indicator--neutral">
+                <Info size={12} />
+                <span>Steady</span>
+              </span>
+            </div>
+
+            <form onSubmit={handleWeightSubmit} className="weight-log-form">
+              <label htmlFor="dashboard-weight-input" style={{ fontSize: "11px", fontWeight: "600", color: "var(--text-2)" }}>
+                Log Today&apos;s Weight:
+              </label>
+              <div className="weight-input-wrapper">
+                <input
+                  id="dashboard-weight-input"
+                  type="number"
+                  step="0.1"
+                  placeholder="e.g. 82.5"
+                  className="weight-input"
+                  value={inputWeight}
+                  onChange={(e) => setInputWeight(e.target.value)}
+                />
+                <button 
+                  type="submit" 
+                  disabled={weightMutation.isPending}
+                  className="weight-input-btn"
+                >
+                  {weightMutation.isPending ? "..." : "Save"}
+                </button>
+              </div>
+              
+              {showWeightToast && (
+                <div className="weight-success-toast">
+                  <CheckCircle2 size={12} />
+                  <span>Weight updated successfully!</span>
+                </div>
+              )}
+            </form>
+          </div>
+        </section>
+
+        {/* Quick Actions Panel */}
+        <section className="premium-card quick-actions-card">
+          <div className="premium-card__header" style={{ marginBottom: "16px" }}>
+            <div className="premium-card__title-area">
+              <span className="premium-card__icon"><Sparkles size={18} /></span>
+              <h2 className="premium-card__title">Smart Shortcuts</h2>
+            </div>
+          </div>
+
+          <div className="quick-actions-grid">
+            <Link to="/scan" className="action-card-premium action-card-premium--highlight">
+              <div className="action-card-premium__icon-box">
+                <Camera size={20} />
+              </div>
+              <div className="action-card-premium__text">
+                <span className="action-card-premium__label">AI Scan Plate</span>
+                <span className="action-card-premium__sub">Instant nutrition scan</span>
+              </div>
+              <ChevronRight size={16} style={{ marginLeft: "auto", color: "var(--accent)" }} />
+            </Link>
+
+            <Link to="/log" className="action-card-premium">
+              <div className="action-card-premium__icon-box">
+                <Search size={20} />
+              </div>
+              <div className="action-card-premium__text">
+                <span className="action-card-premium__label">Log Food Manually</span>
+                <span className="action-card-premium__sub">Search database items</span>
+              </div>
+              <ChevronRight size={16} style={{ marginLeft: "auto", color: "var(--text-3)" }} />
+            </Link>
+          </div>
+        </section>
+
+        {/* Today's Meals Section */}
+        <section className="premium-card today-meals-card">
+          <div className="premium-card__header">
+            <div className="premium-card__title-area">
+              <span className="premium-card__icon"><CheckCircle2 size={18} /></span>
+              <h2 className="premium-card__title">Today&apos;s Meal Logs</h2>
+            </div>
+            <Link to="/history" className="premium-card__link">Log History</Link>
+          </div>
+
+          {diaryData.mealGroups?.length === 0 || diaryData.mealGroups?.every(g => g.entries.length === 0) ? (
+            <div style={{ textAlign: "center", padding: "40px 0", background: "var(--surface-2)", borderRadius: "var(--radius-lg)", border: "1px dashed var(--border)" }}>
+              <Pizza size={40} style={{ color: "var(--text-3)", marginBottom: "12px", opacity: 0.7 }} />
+              <p style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-2)", marginBottom: "4px" }}>No meals logged yet today.</p>
+              <p style={{ fontSize: "12px", color: "var(--text-3)", marginBottom: "16px" }}>Keep track of your nutrient intake to hit your targets.</p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                <Link to="/scan" className="btn-modern-primary" style={{ fontSize: '12px', padding: '8px 16px' }}>Scan with AI</Link>
+                <Link to="/log" className="btn-modern-secondary" style={{ fontSize: '12px', padding: '8px 16px' }}>Search Manually</Link>
+              </div>
+            </div>
+          ) : (
+            <div className="meals-list">
+              {diaryData.mealGroups.map((group) => {
+                if (group.entries.length === 0) return null;
+                return (
+                  <div key={group.MealType} className="meal-type-group">
+                    <div className="meal-type-group__header">
+                      <span className="meal-type-group__name">
+                        {group.MealType}
+                      </span>
+                      <span className="meal-type-group__cal">
+                        {Math.round(group.GroupCalories)} kcal
+                      </span>
+                    </div>
+                    <div>
+                      {group.entries.map((entry) => (
+                        <div key={entry.Id} className="meal-entry-row">
+                          <div className="meal-entry-info">
+                            <span className="meal-entry-name">{entry.FoodName}</span>
+                            <div className="meal-entry-meta">
+                              {entry.ServingSizeGrams && (
+                                <span style={{ fontWeight: "600" }}>{Math.round(entry.ServingSizeGrams)}g</span>
+                              )}
+                              <span className="meal-entry-macro-badge meal-entry-macro-badge--p">
+                                P: {Math.round(entry.Protein)}g
+                              </span>
+                              <span className="meal-entry-macro-badge meal-entry-macro-badge--c">
+                                C: {Math.round(entry.Carbs)}g
+                              </span>
+                              <span className="meal-entry-macro-badge meal-entry-macro-badge--f">
+                                F: {Math.round(entry.Fat)}g
+                              </span>
+                            </div>
+                          </div>
+                          <div className="meal-entry-right">
+                            <span className="meal-entry-cal">{Math.round(entry.Calories)} kcal</span>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to delete "${entry.FoodName}"?`)) {
+                                  deleteMutation.mutate(entry.Id);
+                                }
+                              }}
+                              className="meal-entry-delete"
+                              disabled={deleteMutation.isPending}
+                              aria-label={`Delete log ${entry.FoodName}`}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
       </div>
     </PageShell>
   );
 }
-
-export default DashboardPage;

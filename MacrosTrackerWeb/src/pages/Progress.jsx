@@ -8,6 +8,13 @@ import GoalHeatmap from "../components/GoalHeatmap";
 import WeeklySummaryTable from "../components/WeeklySummaryTable";
 import { getDiary } from "../api/diaryClient";
 import { getProgressTrends, getProgressStreaks, getWeeklySummary } from "../api/progressClient";
+import { motion, AnimatePresence } from "framer-motion";
+
+const tabVariants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -10 }
+};
 
 function getMonday(offsetWeeks) {
   const d = new Date();
@@ -68,106 +75,140 @@ function ProgressPage() {
         ))}
       </div>
 
-      {activeTab === "today" && (
-        <div className="tab-panel">
-          {todayQuery.isLoading && <div className="spinner spinner--lg" />}
-          {todayQuery.isError && <div className="alert alert--error">Failed to load today&apos;s data. Please try again.</div>}
-          {todayQuery.data && (() => {
-            const { dailySummary, goals } = todayQuery.data;
-            if (!goals) {
-              return (
-                <div className="empty-state">
-                  <p>Set your nutrition goals to see your progress.</p>
-                  <Link to="/goal-setup" className="button-secondary">Set goals</Link>
-                </div>
-              );
-            }
-            return (
-              <div className="progress-bars">
-                {dailySummary.totalCalories === 0 && (
-                  <p className="progress-hint">No food logged today — head to Log Food to start tracking.</p>
-                )}
-                <MacroProgressBar label="Calories" consumed={dailySummary.totalCalories} goal={goals.caloriesTarget} unit="kcal" />
-                <MacroProgressBar label="Protein" consumed={dailySummary.totalProtein} goal={goals.proteinTarget} unit="g" />
-                <MacroProgressBar label="Carbs" consumed={dailySummary.totalCarbs} goal={goals.carbsTarget} unit="g" />
-                <MacroProgressBar label="Fat" consumed={dailySummary.totalFat} goal={goals.fatTarget} unit="g" />
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {activeTab === "trends" && (
-        <div className="tab-panel">
-          <div className="range-selector">
-            {[7, 30, 90].map(r => (
-              <button
-                key={r}
-                type="button"
-                className={`range-btn${selectedRange === r ? " range-btn--active" : ""}`}
-                onClick={() => setSelectedRange(r)}
-              >
-                {r}d
-              </button>
-            ))}
-          </div>
-          {trendsQuery.isLoading && <div className="spinner spinner--lg" />}
-          {trendsQuery.isError && <div className="alert alert--error">Failed to load trends. Please try again.</div>}
-          {trendsQuery.data && (
-            <div className="trend-charts">
-              <TrendChart days={trendsQuery.data.days} metric="calories" goal={trendsQuery.data.goals?.caloriesTarget ?? null} label="Calories (kcal)" />
-              <TrendChart days={trendsQuery.data.days} metric="protein" goal={trendsQuery.data.goals?.proteinTarget ?? null} label="Protein (g)" />
-              <TrendChart days={trendsQuery.data.days} metric="carbs" goal={trendsQuery.data.goals?.carbsTarget ?? null} label="Carbs (g)" />
-              <TrendChart days={trendsQuery.data.days} metric="fat" goal={trendsQuery.data.goals?.fatTarget ?? null} label="Fat (g)" />
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === "streaks" && (
-        <div className="tab-panel">
-          {streaksQuery.isLoading && <div className="spinner spinner--lg" />}
-          {streaksQuery.isError && <div className="alert alert--error">Failed to load streaks. Please try again.</div>}
-          {streaksQuery.data && (() => {
-            const { currentStreak, goalHitRate, heatmapDays, hasGoal } = streaksQuery.data;
-            if (!hasGoal) {
-              return (
-                <div className="empty-state">
-                  <p>Set your nutrition goals to start tracking your streak.</p>
-                  <Link to="/goal-setup" className="button-secondary">Set goals</Link>
-                </div>
-              );
-            }
-            return (
-              <>
-                <div className="streak-stats">
-                  <div className="streak-counter">
-                    <span className="streak-counter__number">{currentStreak}</span>
-                    <span className="streak-counter__label">day streak</span>
+      <AnimatePresence mode="wait">
+        {activeTab === "today" && (
+          <motion.div 
+            key="today"
+            className="tab-panel"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+          >
+            {todayQuery.isLoading && <div className="spinner spinner--lg" />}
+            {todayQuery.isError && <div className="alert alert--error">Failed to load today&apos;s data. Please try again.</div>}
+            {todayQuery.data && (() => {
+              const { dailySummary, goals } = todayQuery.data;
+              if (!goals) {
+                return (
+                  <div className="empty-state">
+                    <p>Set your nutrition goals to see your progress.</p>
+                    <Link to="/goal-setup" className="button-secondary">Set goals</Link>
                   </div>
-                  <p className="streak-hit-rate">{goalHitRate}% of logged days on goal (last 30 days)</p>
+                );
+              }
+              return (
+                <div className="progress-bars">
+                  {dailySummary.totalCalories === 0 && (
+                    <p className="progress-hint">No food logged today — head to Log Food to start tracking.</p>
+                  )}
+                  <MacroProgressBar label="Calories" consumed={dailySummary.totalCalories} goal={goals.caloriesTarget} unit="kcal" />
+                  <MacroProgressBar label="Protein" consumed={dailySummary.totalProtein} goal={goals.proteinTarget} unit="g" />
+                  <MacroProgressBar label="Carbs" consumed={dailySummary.totalCarbs} goal={goals.carbsTarget} unit="g" />
+                  <MacroProgressBar label="Fat" consumed={dailySummary.totalFat} goal={goals.fatTarget} unit="g" />
                 </div>
-                <GoalHeatmap days={heatmapDays} />
-              </>
-            );
-          })()}
-        </div>
-      )}
+              );
+            })()}
+          </motion.div>
+        )}
 
-      {activeTab === "weekly" && (
-        <div className="tab-panel">
-          {weeklyQuery.isLoading && <div className="spinner spinner--lg" />}
-          {weeklyQuery.isError && <div className="alert alert--error">Failed to load weekly summary. Please try again.</div>}
-          {weeklyQuery.data && (
-            <WeeklySummaryTable
-              summary={weeklyQuery.data}
-              onPrev={() => setWeekOffset(o => o - 1)}
-              onNext={() => setWeekOffset(o => o + 1)}
-              isCurrentWeek={weekOffset === 0}
-            />
-          )}
-        </div>
-      )}
+        {activeTab === "trends" && (
+          <motion.div 
+            key="trends"
+            className="tab-panel"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+          >
+            <div className="range-selector">
+              {[7, 30, 90].map(r => (
+                <button
+                  key={r}
+                  type="button"
+                  className={`range-btn${selectedRange === r ? " range-btn--active" : ""}`}
+                  onClick={() => setSelectedRange(r)}
+                >
+                  {r}d
+                </button>
+              ))}
+            </div>
+            {trendsQuery.isLoading && <div className="spinner spinner--lg" />}
+            {trendsQuery.isError && <div className="alert alert--error">Failed to load trends. Please try again.</div>}
+            {trendsQuery.data && (
+              <div className="trend-charts">
+                <TrendChart days={trendsQuery.data.days} metric="calories" goal={trendsQuery.data.goals?.caloriesTarget ?? null} label="Calories (kcal)" />
+                <TrendChart days={trendsQuery.data.days} metric="protein" goal={trendsQuery.data.goals?.proteinTarget ?? null} label="Protein (g)" />
+                <TrendChart days={trendsQuery.data.days} metric="carbs" goal={trendsQuery.data.goals?.carbsTarget ?? null} label="Carbs (g)" />
+                <TrendChart days={trendsQuery.data.days} metric="fat" goal={trendsQuery.data.goals?.fatTarget ?? null} label="Fat (g)" />
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {activeTab === "streaks" && (
+          <motion.div 
+            key="streaks"
+            className="tab-panel"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+          >
+            {streaksQuery.isLoading && <div className="spinner spinner--lg" />}
+            {streaksQuery.isError && <div className="alert alert--error">Failed to load streaks. Please try again.</div>}
+            {streaksQuery.data && (() => {
+              const { currentStreak, goalHitRate, heatmapDays, hasGoal } = streaksQuery.data;
+              if (!hasGoal) {
+                return (
+                  <div className="empty-state">
+                    <p>Set your nutrition goals to start tracking your streak.</p>
+                    <Link to="/goal-setup" className="button-secondary">Set goals</Link>
+                  </div>
+                );
+              }
+              return (
+                <>
+                  <div className="streak-stats">
+                    <div className="streak-counter">
+                      <span className="streak-counter__number">{currentStreak}</span>
+                      <span className="streak-counter__label">day streak</span>
+                    </div>
+                    <p className="streak-hit-rate">{goalHitRate}% of logged days on goal (last 30 days)</p>
+                  </div>
+                  <GoalHeatmap days={heatmapDays} />
+                </>
+              );
+            })()}
+          </motion.div>
+        )}
+
+        {activeTab === "weekly" && (
+          <motion.div 
+            key="weekly"
+            className="tab-panel"
+            variants={tabVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{ duration: 0.2 }}
+          >
+            {weeklyQuery.isLoading && <div className="spinner spinner--lg" />}
+            {weeklyQuery.isError && <div className="alert alert--error">Failed to load weekly summary. Please try again.</div>}
+            {weeklyQuery.data && (
+              <WeeklySummaryTable
+                summary={weeklyQuery.data}
+                onPrev={() => setWeekOffset(o => o - 1)}
+                onNext={() => setWeekOffset(o => o + 1)}
+                isCurrentWeek={weekOffset === 0}
+              />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageShell>
   );
 }

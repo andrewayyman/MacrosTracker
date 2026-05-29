@@ -4,7 +4,7 @@ import { getAccessToken, getRefreshToken } from "../utils/storage";
 import { useAuthStore } from "../store/authStore";
 
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:5000",
+  baseURL: import.meta.env.VITE_API_URL ?? "https://localhost:7159",
 });
 
 let activeRefreshPromise = null;
