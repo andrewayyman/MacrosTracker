@@ -288,11 +288,11 @@ export default function EgyptianFoodQuickLog({ onSuccess }) {
     const factor = foodItem.servingSizeGrams > 0 ? grams / foodItem.servingSizeGrams : 1;
     const payload = {
       foodName: foodItem.name,
-      calories: Math.round(foodItem.caloriesPerServing * factor * 10) / 10,
-      protein: Math.round(foodItem.proteinPerServing * factor * 10) / 10,
-      carbs: Math.round(foodItem.carbsPerServing * factor * 10) / 10,
-      fat: Math.round(foodItem.fatPerServing * factor * 10) / 10,
-      servingSizeGrams: Math.round(grams * 10) / 10,
+      calories: Math.round((foodItem.caloriesPerServing * factor) || 0),
+      protein: Math.round((foodItem.proteinPerServing * factor) || 0),
+      carbs: Math.round((foodItem.carbsPerServing * factor) || 0),
+      fat: Math.round((foodItem.fatPerServing * factor) || 0),
+      servingSizeGrams: Math.round(grams || 0),
       mealType: mealType,
       foodScanId: null,
       localFoodItemId: foodItem.id
@@ -370,10 +370,10 @@ export default function EgyptianFoodQuickLog({ onSuccess }) {
 
             // Recalculated nutritional macros based on exact portions
             const factor = foodItem.servingSizeGrams > 0 ? grams / foodItem.servingSizeGrams : 1.0;
-            const calculatedCals = Math.round(foodItem.caloriesPerServing * factor);
-            const calculatedProtein = Math.round(foodItem.proteinPerServing * factor * 10) / 10;
-            const calculatedCarbs = Math.round(foodItem.carbsPerServing * factor * 10) / 10;
-            const calculatedFat = Math.round(foodItem.fatPerServing * factor * 10) / 10;
+            const calculatedCals = Math.round((foodItem.caloriesPerServing * factor) || 0);
+            const calculatedProtein = Math.round((foodItem.proteinPerServing * factor) || 0);
+            const calculatedCarbs = Math.round((foodItem.carbsPerServing * factor) || 0);
+            const calculatedFat = Math.round((foodItem.fatPerServing * factor) || 0);
 
             const isItemLogging = isLogging[meta.key];
             const isItemSuccess = successLogs[meta.key];

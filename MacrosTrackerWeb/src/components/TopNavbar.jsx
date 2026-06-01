@@ -49,23 +49,33 @@ export default function TopNavbar({ onMenuClick }) {
             {user?.firstName?.charAt(0) || "U"}
           </div>
           <span className="dash-topnav__username">{user?.firstName || "User"}</span>
-          <ChevronDown size={16} />
+          <ChevronDown size={16} style={{ 
+            transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s var(--ease-out)'
+          }} />
         </button>
         
-        {dropdownOpen && (
-          <div className="dash-topnav__dropdown">
-            <Link to="/profile-setup" className="dash-topnav__dropdown-item" onClick={() => setDropdownOpen(false)}>
-              <User size={16} /> Profile
-            </Link>
-            <Link to="/goal-setup" className="dash-topnav__dropdown-item" onClick={() => setDropdownOpen(false)}>
-              <Settings size={16} /> Settings
-            </Link>
-            <div className="dash-topnav__dropdown-divider"></div>
-            <button className="dash-topnav__dropdown-item text-danger" onClick={handleLogout}>
-              <LogOut size={16} /> Logout
-            </button>
+        <div className={`dash-topnav__dropdown ${dropdownOpen ? "dash-topnav__dropdown--open" : ""}`}>
+          <div className="dash-topnav__dropdown-header">
+            <div className="dash-topnav__dropdown-name">
+              {user?.firstName || "User"} {user?.lastName || ""}
+            </div>
+            <div className="dash-topnav__dropdown-email">
+              {user?.email || "Premium Member"}
+            </div>
           </div>
-        )}
+          
+          <Link to="/profile-setup" className="dash-topnav__dropdown-item" onClick={() => setDropdownOpen(false)}>
+            <User size={16} /> Profile Settings
+          </Link>
+          <Link to="/goal-setup" className="dash-topnav__dropdown-item" onClick={() => setDropdownOpen(false)}>
+            <Settings size={16} /> Goals & Nutrition
+          </Link>
+          <div className="dash-topnav__dropdown-divider"></div>
+          <button className="dash-topnav__dropdown-item text-danger" onClick={handleLogout}>
+            <LogOut size={16} /> Logout
+          </button>
+        </div>
       </div>
     </header>
   );

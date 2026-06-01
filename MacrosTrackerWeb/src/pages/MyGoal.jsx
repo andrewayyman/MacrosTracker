@@ -28,7 +28,7 @@ import {
 import PageShell from "../components/PageShell";
 import { getGoalProfile, saveGoalProfile, previewGoalCalculation } from "../api/userGoalProfileClient";
 import { getDailyGoal, getSuggestedGoal, upsertDailyGoal } from "../api/nutritionGoalsClient";
-import { getProgressStreaks } from "../api/progressClient";
+import { getProgressStreaks, getProgressTrends } from "../api/progressClient";
 import { parseServiceErrors } from "../utils/serviceErrors";
 import "./MyGoal.css";
 
@@ -81,6 +81,7 @@ function MyGoalPage() {
   // Goal Profile and Streak States
   const [profile, setProfile] = useState(null);
   const [streaks, setStreaks] = useState(null);
+  const [trends, setTrends] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -143,12 +144,18 @@ function MyGoalPage() {
     }
 
     try {
-      const streakData = await getProgressStreaks();
+      const [streakData, trendData] = await Promise.all([
+        getProgressStreaks(),
+        getProgressTrends(7)
+      ]);
       if (!cancelled && streakData) {
         setStreaks(streakData);
       }
+      if (!cancelled && trendData) {
+        setTrends(trendData);
+      }
     } catch {
-      // Fail silently for streaks
+      // Fail silently for progress stats
     }
 
     try {
@@ -159,10 +166,10 @@ function MyGoalPage() {
         setIsCustomMode(isCustom);
         if (isCustom) {
           setCustomForm({
-            caloriesTarget: dailyGoalResult.data.caloriesTarget ?? "",
-            proteinGramsTarget: dailyGoalResult.data.proteinGramsTarget ?? "",
-            carbohydratesGramsTarget: dailyGoalResult.data.carbohydratesGramsTarget ?? "",
-            fatGramsTarget: dailyGoalResult.data.fatGramsTarget ?? ""
+            caloriesTarget: Math.round(dailyGoalResult.data.caloriesTarget) ?? "",
+            proteinGramsTarget: Math.round(dailyGoalResult.data.proteinGramsTarget) ?? "",
+            carbohydratesGramsTarget: Math.round(dailyGoalResult.data.carbohydratesGramsTarget) ?? "",
+            fatGramsTarget: Math.round(dailyGoalResult.data.fatGramsTarget) ?? ""
           });
         }
       }
@@ -282,7 +289,7 @@ function MyGoalPage() {
     const p = Number(customForm.proteinGramsTarget) || 0;
     const c = Number(customForm.carbohydratesGramsTarget) || 0;
     const f = Number(customForm.fatGramsTarget) || 0;
-    return (p * 4) + (c * 4) + (f * 9);
+    return Math.round((p * 4) + (c * 4) + (f * 9));
   }, [customForm]);
 
   const handleSaveCustomGoals = async (e) => {
@@ -360,9 +367,9 @@ function MyGoalPage() {
   // Macro calorie split percentages
   const macroSplit = useMemo(() => {
     if (!profile) return null;
-    const proteinCal = profile.dailyProteinGrams * 4;
-    const carbsCal = profile.dailyCarbsGrams * 4;
-    const fatCal = profile.dailyFatGrams * 9;
+    const proteinCal = Math.round(profile.dailyProteinGrams * 4);
+    const carbsCal = Math.round(profile.dailyCarbsGrams * 4);
+    const fatCal = Math.round(profile.dailyFatGrams * 9);
     const sumCal = proteinCal + carbsCal + fatCal;
     return {
       proteinPct: Math.round((proteinCal / sumCal) * 100),
@@ -431,8 +438,8 @@ function MyGoalPage() {
   // Make the ring filled initially as target preview
   const ringDashoffset = 0; 
 
-  // Smart insights recommendations safely fallback
-  const smartRecommendations = profile ? getSmartRecommendations(profile.goalType, profile.biologicalSex) : [];
+  // Smart insights recommendations dynamically generated
+  const smartRecommendations = profile ? getSmartRecommendations(profile, streaks, trends) : [];
 
   // High-level goal category badge safely fallback
   const goalCategory = profile ? getGoalCategory(profile.goalType) : { label: "Goal Setup", badgeClass: "maintain" };
@@ -513,10 +520,10 @@ function MyGoalPage() {
                     setIsCustomMode(true);
                     if (!customForm.caloriesTarget) {
                       setCustomForm({
-                        caloriesTarget: dailyGoal?.caloriesTarget ?? profile?.dailyCaloriesTarget ?? "",
-                        proteinGramsTarget: dailyGoal?.proteinGramsTarget ?? profile?.dailyProteinGrams ?? "",
-                        carbohydratesGramsTarget: dailyGoal?.carbohydratesGramsTarget ?? profile?.dailyCarbsGrams ?? "",
-                        fatGramsTarget: dailyGoal?.fatGramsTarget ?? profile?.dailyFatGrams ?? ""
+                        caloriesTarget: Math.round(dailyGoal?.caloriesTarget ?? profile?.dailyCaloriesTarget) ?? "",
+                        proteinGramsTarget: Math.round(dailyGoal?.proteinGramsTarget ?? profile?.dailyProteinGrams) ?? "",
+                        carbohydratesGramsTarget: Math.round(dailyGoal?.carbohydratesGramsTarget ?? profile?.dailyCarbsGrams) ?? "",
+                        fatGramsTarget: Math.round(dailyGoal?.fatGramsTarget ?? profile?.dailyFatGrams) ?? ""
                       });
                     }
                   }}
@@ -573,6 +580,7 @@ function MyGoalPage() {
                         required
                         min="500"
                         max="10000"
+                        step="1"
                       />
                     </div>
                     <div className="mygoal-input-group">
@@ -589,6 +597,7 @@ function MyGoalPage() {
                         required
                         min="0"
                         max="1000"
+                        step="1"
                       />
                     </div>
                     <div className="mygoal-input-group">
@@ -605,6 +614,7 @@ function MyGoalPage() {
                         required
                         min="0"
                         max="1000"
+                        step="1"
                       />
                     </div>
                     <div className="mygoal-input-group">
@@ -621,6 +631,7 @@ function MyGoalPage() {
                         required
                         min="0"
                         max="1000"
+                        step="1"
                       />
                     </div>
                   </div>
@@ -662,8 +673,8 @@ function MyGoalPage() {
               </div>
             )}
 
-            {/* Plan Hero Card */}
-            <article className="mygoal-card">
+            {/* Plan Hero Card (Goal Overview) */}
+            <article className="mygoal-card mygoal-card--hero">
               <div className="mygoal-plan-hero">
                 <div className="mygoal-hero-text">
                   <span className={`mygoal-pill-badge mygoal-pill-badge--${goalCategory.badgeClass}`}>
@@ -673,18 +684,20 @@ function MyGoalPage() {
                   <h3 className="mygoal-hero-title">{goalLabel}</h3>
                   <p className="mygoal-hero-description">{rationale}</p>
                   
-                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)', color: 'var(--text-2)' }}>
+                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-sm)', color: 'var(--text-1)', fontWeight: '600' }}>
+                      <Scale size={16} className="text-3" />
+                      <span>{profile.weightKg} kg</span>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-3)', fontWeight: '400' }}>Current</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-sm)', color: 'var(--text-1)', fontWeight: '600' }}>
+                      <TrendingUp size={16} className="text-3" />
+                      <span>{Math.abs(getWeeklyRate(profile.goalType))} kg/wk</span>
+                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-3)', fontWeight: '400' }}>Target Rate</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-sm)', color: 'var(--text-2)', fontWeight: '500' }}>
                       <User size={14} className="text-3" />
-                      <span>{profile.biologicalSex} · {profile.ageYears} years</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)', color: 'var(--text-2)' }}>
-                      <Ruler size={14} className="text-3" />
-                      <span>{profile.heightCm} cm</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: 'var(--text-xs)', color: 'var(--text-2)' }}>
-                      <Scale size={14} className="text-3" />
-                      <span>{profile.weightKg} kg weight</span>
+                      <span>{profile.biologicalSex} · {profile.ageYears} yrs · {profile.heightCm} cm</span>
                     </div>
                   </div>
                 </div>
@@ -708,7 +721,7 @@ function MyGoalPage() {
                       />
                     </svg>
                     <div className="mygoal-cal-ring-text">
-                      <span className="mygoal-cal-ring-val">{profile.dailyCaloriesTarget}</span>
+                      <span className="mygoal-cal-ring-val">{Math.round(profile.dailyCaloriesTarget)}</span>
                       <span className="mygoal-cal-ring-lbl">Target kcal</span>
                     </div>
                   </div>
@@ -728,12 +741,12 @@ function MyGoalPage() {
                   <span className="mygoal-macro-percentage">{macroSplit?.proteinPct}% kcal</span>
                 </div>
                 <div className="mygoal-macro-value-group">
-                  <span className="mygoal-macro-g-val">{profile.dailyProteinGrams} g</span>
+                  <span className="mygoal-macro-g-val">{Math.round(profile.dailyProteinGrams)} g</span>
                   <span className="mygoal-macro-cal-val">{macroSplit?.proteinCal} kcal / day</span>
                 </div>
                 <div className="premium-macro-bar" style={{ marginTop: 'auto' }}>
-                  <div className="premium-macro-bar__track" style={{ height: '4px' }}>
-                    <div className="premium-macro-bar__fill premium-macro-bar__fill--protein" style={{ width: '100%' }} />
+                  <div className="premium-macro-bar__track" style={{ height: '4px', background: 'var(--surface-3)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div className="premium-macro-bar__fill premium-macro-bar__fill--protein" style={{ width: '100%', height: '100%', background: 'var(--macro-protein, oklch(0.609 0.176 250.9))' }} />
                   </div>
                 </div>
               </div>
@@ -748,12 +761,12 @@ function MyGoalPage() {
                   <span className="mygoal-macro-percentage">{macroSplit?.carbsPct}% kcal</span>
                 </div>
                 <div className="mygoal-macro-value-group">
-                  <span className="mygoal-macro-g-val">{profile.dailyCarbsGrams} g</span>
+                  <span className="mygoal-macro-g-val">{Math.round(profile.dailyCarbsGrams)} g</span>
                   <span className="mygoal-macro-cal-val">{macroSplit?.carbsCal} kcal / day</span>
                 </div>
                 <div className="premium-macro-bar" style={{ marginTop: 'auto' }}>
-                  <div className="premium-macro-bar__track" style={{ height: '4px' }}>
-                    <div className="premium-macro-bar__fill premium-macro-bar__fill--carbs" style={{ width: '100%' }} />
+                  <div className="premium-macro-bar__track" style={{ height: '4px', background: 'var(--surface-3)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div className="premium-macro-bar__fill premium-macro-bar__fill--carbs" style={{ width: '100%', height: '100%', background: 'var(--macro-carbs, oklch(0.580 0.140 72))' }} />
                   </div>
                 </div>
               </div>
@@ -768,12 +781,12 @@ function MyGoalPage() {
                   <span className="mygoal-macro-percentage">{macroSplit?.fatPct}% kcal</span>
                 </div>
                 <div className="mygoal-macro-value-group">
-                  <span className="mygoal-macro-g-val">{profile.dailyFatGrams} g</span>
+                  <span className="mygoal-macro-g-val">{Math.round(profile.dailyFatGrams)} g</span>
                   <span className="mygoal-macro-cal-val">{macroSplit?.fatCal} kcal / day</span>
                 </div>
                 <div className="premium-macro-bar" style={{ marginTop: 'auto' }}>
-                  <div className="premium-macro-bar__track" style={{ height: '4px' }}>
-                    <div className="premium-macro-bar__fill premium-macro-bar__fill--fat" style={{ width: '100%' }} />
+                  <div className="premium-macro-bar__track" style={{ height: '4px', background: 'var(--surface-3)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div className="premium-macro-bar__fill premium-macro-bar__fill--fat" style={{ width: '100%', height: '100%', background: 'var(--macro-fat, oklch(0.490 0.170 25))' }} />
                   </div>
                 </div>
               </div>
@@ -781,106 +794,71 @@ function MyGoalPage() {
               </>
             )}
 
-            {/* Consistency & Motivation Scorecard */}
+            {/* Goal Progress & Motivation Center */}
             <article className="mygoal-card">
               <div className="mygoal-card__header">
                 <div className="mygoal-card__title-group">
                   <div className="mygoal-card__icon-box">
                     <Award size={18} />
                   </div>
-                  <h4 className="mygoal-card__title">Goal Motivation & Continuity</h4>
+                  <h4 className="mygoal-card__title">Goal Progress & Motivation</h4>
                 </div>
               </div>
 
-              <div className="mygoal-scorecard">
-                <div className="mygoal-scorecard-item">
-                  <div className="mygoal-score-icon-box mygoal-score-icon-box--streak">
-                    <Flame size={20} />
+              {streaks && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-5)' }}>
+                  {/* Dynamic Motivational Message */}
+                  <div style={{ background: 'var(--surface-2)', padding: 'var(--sp-4)', borderRadius: 'var(--radius-lg)', borderLeft: '4px solid var(--accent)' }}>
+                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-1)', fontWeight: '600', lineHeight: 1.5 }}>
+                      {streaks.currentStreak > 0 
+                        ? `You've logged meals and hit your targets for ${streaks.currentStreak} consecutive days. Keep this momentum going to reach your goal weight.`
+                        : `Every transformation starts with day one. Log your first meal today to kickstart your progress.`}
+                    </p>
                   </div>
-                  <div className="mygoal-score-text">
-                    <span className="mygoal-score-value">{streaks?.currentStreak ?? 0} days</span>
-                    <span className="mygoal-score-label">Active Streak</span>
-                  </div>
-                </div>
 
-                <div className="mygoal-scorecard-item">
-                  <div className="mygoal-score-icon-box mygoal-score-icon-box--rate">
-                    <ThumbsUp size={20} />
-                  </div>
-                  <div className="mygoal-score-text">
-                    <span className="mygoal-score-value">{streaks?.goalHitRate ?? 0}%</span>
-                    <span className="mygoal-score-label">Adherence (30d)</span>
-                  </div>
-                </div>
+                  <div className="mygoal-scorecard">
+                    <div className="mygoal-scorecard-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="mygoal-score-icon-box mygoal-score-icon-box--streak" style={{ width: '32px', height: '32px' }}>
+                          <Flame size={16} />
+                        </div>
+                        <span className="mygoal-score-label">Current Streak</span>
+                      </div>
+                      <span className="mygoal-score-value" style={{ fontSize: 'var(--text-2xl)' }}>{streaks.currentStreak} <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-3)', fontWeight: '500' }}>days</span></span>
+                      {(() => {
+                        const nextMilestone = [3, 7, 14, 21, 30, 50, 100].find(m => m > streaks.currentStreak) || streaks.currentStreak + 10;
+                        const daysLeft = nextMilestone - streaks.currentStreak;
+                        return (
+                          <div style={{ fontSize: '11px', color: 'var(--text-2)', marginTop: '4px' }}>
+                            Only <strong>{daysLeft}</strong> more days to reach your {nextMilestone}-day consistency milestone.
+                          </div>
+                        );
+                      })()}
+                    </div>
 
-                <div className="mygoal-scorecard-item">
-                  <div className="mygoal-score-icon-box mygoal-score-icon-box--status">
-                    <Target size={20} />
-                  </div>
-                  <div className="mygoal-score-text">
-                    <span className="mygoal-score-value" style={{ fontSize: 'var(--text-sm)', fontWeight: '700' }}>
-                      {profile.dailyCaloriesTarget} kcal
-                    </span>
-                    <span className="mygoal-score-label">Energy Target</span>
+                    <div className="mygoal-scorecard-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="mygoal-score-icon-box mygoal-score-icon-box--rate" style={{ width: '32px', height: '32px' }}>
+                          <ThumbsUp size={16} />
+                        </div>
+                        <span className="mygoal-score-label">30-Day Adherence</span>
+                      </div>
+                      <span className="mygoal-score-value" style={{ fontSize: 'var(--text-2xl)' }}>{streaks.goalHitRate}%</span>
+                      <div className="premium-macro-bar" style={{ width: '100%', marginTop: '4px' }}>
+                        <div className="premium-macro-bar__track" style={{ height: '4px', background: 'var(--surface-3)', borderRadius: '2px', overflow: 'hidden' }}>
+                          <div style={{ width: `${streaks.goalHitRate}%`, height: '100%', background: 'var(--success)' }} />
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-2)', marginTop: '4px' }}>
+                        {streaks.goalHitRate >= 80 ? "Excellent consistency! You are on track." : "Aim for 80%+ adherence to see reliable physical changes."}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </article>
 
-            {/* Target Weight Timeline Estimator slider */}
-            {timelineEstimation && timelineEstimation.direction !== "maintain" && (
-              <article className="mygoal-card">
-                <div className="mygoal-card__header">
-                  <div className="mygoal-card__title-group">
-                    <div className="mygoal-card__icon-box">
-                      <Clock size={18} />
-                    </div>
-                    <h4 className="mygoal-card__title">Interactive Target Timeline</h4>
-                  </div>
-                </div>
-
-                <div className="mygoal-timeline-row">
-                  <div className="mygoal-timeline-stat">
-                    <span className="mygoal-timeline-stat__label">Starting Weight</span>
-                    <span className="mygoal-timeline-stat__value">
-                      {profile.weightKg} <span className="mygoal-timeline-stat__unit">kg</span>
-                    </span>
-                  </div>
-
-                  <div className="mygoal-timeline-stat">
-                    <span className="mygoal-timeline-stat__label">Estimated Change</span>
-                    <span className="mygoal-timeline-stat__value" style={{ color: timelineEstimation.direction === "loss" ? "var(--warning)" : "var(--accent)" }}>
-                      {timelineEstimation.change > 0 ? "+" : ""}{timelineEstimation.change.toFixed(2)} <span className="mygoal-timeline-stat__unit">kg</span>
-                    </span>
-                  </div>
-
-                  <div className="mygoal-timeline-stat">
-                    <span className="mygoal-timeline-stat__label">Projected Weight</span>
-                    <span className="mygoal-timeline-stat__value">
-                      {timelineEstimation.target.toFixed(1)} <span className="mygoal-timeline-stat__unit">kg</span>
-                    </span>
-                  </div>
-
-                  <div className="mygoal-slider-wrapper">
-                    <div className="mygoal-slider-header">
-                      <span className="mygoal-slider-title">Timeline Duration</span>
-                      <span className="mygoal-slider-out">{timelineWeeks} Weeks</span>
-                    </div>
-                    <input 
-                      type="range"
-                      min="1"
-                      max="24"
-                      value={timelineWeeks}
-                      onChange={(e) => setTimelineWeeks(Number(e.target.value))}
-                      className="mygoal-slider-control"
-                    />
-                    <span style={{ fontSize: '10px', color: 'var(--text-3)', textAlign: 'center', fontWeight: 600 }}>
-                      Based on a healthy {timelineEstimation.direction} rate of {timelineEstimation.rate.toFixed(2)} kg / week
-                    </span>
-                  </div>
-                </div>
-              </article>
-            )}
+            {/* Goal Progress Section placeholder - Timeline Removed */}
 
             {/* Smart Recommendations Section */}
             <article className="mygoal-card">
@@ -1135,23 +1113,23 @@ function MyGoalPage() {
                     <div className="mygoal-preview-grid">
                       <div className="mygoal-preview-item" style={{ gridColumn: 'span 2', background: 'var(--surface-2)', border: '1px solid var(--border-strong)' }}>
                         <span className="mygoal-preview-val" style={{ fontSize: 'var(--text-3xl)', color: 'var(--accent)' }}>
-                          {preview.dailyCaloriesTarget}
+                          {Math.round(preview.dailyCaloriesTarget)}
                         </span>
                         <span className="mygoal-preview-lbl"> kcal / day</span>
                       </div>
                       
                       <div className="mygoal-preview-item">
-                        <span className="mygoal-preview-val">{preview.dailyProteinGrams}g</span>
+                        <span className="mygoal-preview-val">{Math.round(preview.dailyProteinGrams)}g</span>
                         <span className="mygoal-preview-lbl">Protein</span>
                       </div>
 
                       <div className="mygoal-preview-item">
-                        <span className="mygoal-preview-val">{preview.dailyCarbsGrams}g</span>
+                        <span className="mygoal-preview-val">{Math.round(preview.dailyCarbsGrams)}g</span>
                         <span className="mygoal-preview-lbl">Carbs</span>
                       </div>
 
                       <div className="mygoal-preview-item" style={{ gridColumn: 'span 2' }}>
-                        <span className="mygoal-preview-val">{preview.dailyFatGrams}g</span>
+                        <span className="mygoal-preview-val">{Math.round(preview.dailyFatGrams)}g</span>
                         <span className="mygoal-preview-lbl">Fats</span>
                       </div>
                     </div>
@@ -1223,80 +1201,93 @@ function buildRationale(profile) {
   }
 }
 
-function getSmartRecommendations(goalType, sex) {
-  const isLoss = goalType.includes("Lose");
-  const isGain = goalType.includes("Gain");
+function getSmartRecommendations(profile, streaks, trends) {
+  const isLoss = profile.goalType.includes("Lose");
+  const isGain = profile.goalType.includes("Gain");
+  
+  const recs = [];
 
-  if (isLoss) {
-    return [
-      {
-        icon: <Beef size={18} />,
-        title: "Skeletal Muscle Protection",
-        desc: "A target protein rate of 2.0g/kg helps preserve muscle tissue during calorie deficit states. Focus on lean turkey, salmon, chicken, eggs, and protein isolates."
-      },
-      {
-        icon: <Wheat size={18} />,
-        title: "High-Volume Glycogen Support",
-        desc: "Fuel heavy gym sessions using complex fibers like brown rice, oats, sweet potatoes, and leafy greens. High-volume greens ensure maximum satiety under deficits."
-      },
-      {
-        icon: <Pizza size={18} />,
-        title: "Hormonal Balance Baseline",
-        desc: "Fat targets compose 30% of energy targets. Healthy fats (avocados, nuts, extra-virgin olive oil) are vital for regulating hormone production during weight reduction phases."
-      },
-      {
-        icon: <Sparkles size={18} />,
-        title: "Deficit Consistency Overload",
-        desc: "Maintain a steady tracking rhythm. Hitting your calorie goals consistently creates a cumulative fat reduction rate. Prioritize high-hydration habits."
+  // 1. Streak / Adherence Insights (Motivation)
+  if (streaks) {
+    if (streaks.currentStreak >= 3) {
+      recs.push({
+        icon: <Flame size={18} />,
+        title: "Consistency Unlocked",
+        desc: `You've stayed within your calorie target for ${streaks.currentStreak} consecutive days. Keep this consistency to reach your weight goal faster.`
+      });
+    } else if (streaks.goalHitRate < 50 && streaks.goalHitRate > 0) {
+      recs.push({
+        icon: <Calendar size={18} />,
+        title: "Build Your Routine",
+        desc: "Your 30-day adherence is below 50%. Focus on logging your meals every day this week, even if you go slightly over targets, to build the habit."
+      });
+    }
+  }
+
+  // 2. Trends / Macro Insights (Data-driven)
+  if (trends && trends.days && trends.days.length > 0) {
+    const dataDays = trends.days.filter(d => d.hasData);
+    if (dataDays.length > 0) {
+      const avgProtein = dataDays.reduce((sum, d) => sum + d.protein, 0) / dataDays.length;
+      const proteinDiff = profile.dailyProteinGrams - avgProtein;
+
+      if (proteinDiff >= 15) {
+        recs.push({
+          icon: <Beef size={18} />,
+          title: "Protein Gap Detected",
+          desc: `You're consistently missing your protein target by ~${Math.round(proteinDiff)}g. Adding a serving of Greek yogurt, eggs, or whey isolate could close this gap and protect muscle tissue.`
+        });
+      } else if (proteinDiff <= 0 && avgProtein > 0) {
+        recs.push({
+          icon: <Check size={18} />,
+          title: "Protein Target Mastered",
+          desc: `Excellent! You are consistently hitting your ${Math.round(profile.dailyProteinGrams)}g protein target. This provides optimal structural support for your physical goals.`
+        });
       }
-    ];
-  } else if (isGain) {
-    return [
-      {
-        icon: <Beef size={18} />,
-        title: "Positive Nitrogen Balance",
-        desc: "hypertrophy requires a baseline protein surplus of 2.2g/kg to repair fiber damage. Allocate proteins consistently across 3-5 meals throughout the day."
-      },
-      {
+
+      const avgCalories = dataDays.reduce((sum, d) => sum + d.calories, 0) / dataDays.length;
+      const calDiff = avgCalories - profile.dailyCaloriesTarget;
+      
+      if (isLoss && calDiff > 150) {
+        recs.push({
+          icon: <Activity size={18} />,
+          title: "Calorie Surplus Warning",
+          desc: `Over the last ${dataDays.length} logged days, you're averaging ~${Math.round(calDiff)} kcal over your target. Try reducing liquid calories or snack sizes to return to a deficit.`
+        });
+      } else if (isGain && calDiff < -150) {
+        recs.push({
+          icon: <TrendingUp size={18} />,
+          title: "Increase Caloric Intake",
+          desc: `You are averaging ~${Math.round(Math.abs(calDiff))} kcal below your hypertrophy surplus target. Consider adding dense foods like nuts, olive oil, or whole milk.`
+        });
+      }
+    }
+  }
+
+  // 3. Fallback generic, but specific to goal phase
+  if (recs.length < 3) {
+    if (isLoss && !recs.find(r => r.title === "High-Volume Glycogen Support")) {
+      recs.push({
         icon: <Wheat size={18} />,
-        title: "Strength and Anabolic Fuel",
-        desc: "Consuming moderate-to-high glycemic carbohydrates around your workout window maximizes muscle protein synthesis and refills depleted glycogen stores rapidly."
-      },
-      {
-        icon: <Pizza size={18} />,
-        title: "Healthy Energy Density",
-        desc: "To meet elevated surplus requirements comfortably, integrate nutrient-dense fat foods like nut-butters, whole eggs, and dark chocolate to avoid stomach fullness."
-      },
-      {
-        icon: <Sparkles size={18} />,
+        title: "High-Volume Satiety",
+        desc: "To manage hunger during a calorie deficit, prioritize high-volume fibers like brown rice, oats, and leafy greens. They ensure maximum satiety without excessive calories."
+      });
+    } else if (isGain && !recs.find(r => r.title === "Progressive Overload")) {
+      recs.push({
+        icon: <TrendingUp size={18} />,
         title: "Hypertrophy Progression",
-        desc: "Combined with this surplus, ensure progressive overload during weight training. Track strength gains along with bodyweight targets for clean lean tissue accumulation."
-      }
-    ];
-  } else {
-    return [
-      {
-        icon: <Beef size={18} />,
-        title: "Metabolic Steady State",
-        desc: "1.6g/kg of protein is ideal for maintaining current muscle structures. Standard dairy, tofu, lean poultry, and whey isolates are great staple items."
-      },
-      {
-        icon: <Wheat size={18} />,
-        title: "Sustained Physical Workrate",
-        desc: "Carbohydrates provide optimal muscle refueling. Maintain stable portions of whole wheat grains, fruits, and quinoa to stay energetic for daily activities."
-      },
-      {
+        desc: "Combined with this nutritional surplus, ensure progressive overload during your weight training. Track strength gains along with bodyweight targets for clean lean tissue accumulation."
+      });
+    } else if (!isLoss && !isGain && !recs.find(r => r.title === "Dietary Variety")) {
+      recs.push({
         icon: <Pizza size={18} />,
         title: "Dietary Variety and Balance",
         desc: "With balanced maintenance targets, enjoy nutritional flexibility. Allocate fat allowances for cognitive performance through flaxseeds, walnuts, and fatty fish."
-      },
-      {
-        icon: <Sparkles size={18} />,
-        title: "Metabolic Recovery Phase",
-        desc: "Maintenance windows are perfect for correcting fatigue, stabilizing thyroid hormone balances, and providing a mental reset between active cutting/bulking intervals."
-      }
-    ];
+      });
+    }
   }
+
+  return recs.slice(0, 3); // Max 3 cards so it's not overwhelming
 }
 
 function collectRangeErrors(form) {

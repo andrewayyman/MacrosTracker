@@ -795,7 +795,7 @@ function AddMeal() {
             <div className="sidebar-macro-row">
               <div className="sidebar-macro-header">
                 <span className="sidebar-macro-header__name">Protein</span>
-                <span>{Math.round(pConsumed)}g / {pTarget}g ({Math.round(pPercent)}%)</span>
+                <span>{Math.round(pConsumed)}g / {Math.round(pTarget)}g ({Math.round(pPercent)}%)</span>
               </div>
               <div className="sidebar-macro-bar-bg">
                 <div className="sidebar-macro-bar-fill sidebar-macro-bar-fill--protein" style={{ width: `${pPercent}%` }} />
@@ -805,7 +805,7 @@ function AddMeal() {
             <div className="sidebar-macro-row">
               <div className="sidebar-macro-header">
                 <span className="sidebar-macro-header__name">Carbohydrates</span>
-                <span>{Math.round(cConsumed)}g / {cTarget}g ({Math.round(cPercent)}%)</span>
+                <span>{Math.round(cConsumed)}g / {Math.round(cTarget)}g ({Math.round(cPercent)}%)</span>
               </div>
               <div className="sidebar-macro-bar-bg">
                 <div className="sidebar-macro-bar-fill sidebar-macro-bar-fill--carbs" style={{ width: `${cPercent}%` }} />
@@ -815,7 +815,7 @@ function AddMeal() {
             <div className="sidebar-macro-row">
               <div className="sidebar-macro-header">
                 <span className="sidebar-macro-header__name">Fat</span>
-                <span>{Math.round(fConsumed)}g / {fTarget}g ({Math.round(fPercent)}%)</span>
+                <span>{Math.round(fConsumed)}g / {Math.round(fTarget)}g ({Math.round(fPercent)}%)</span>
               </div>
               <div className="sidebar-macro-bar-bg">
                 <div className="sidebar-macro-bar-fill sidebar-macro-bar-fill--fat" style={{ width: `${fPercent}%` }} />

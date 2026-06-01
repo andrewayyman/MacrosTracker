@@ -2904,7 +2904,7 @@ button, input, textarea, select { font: inherit; }
 
 /* Weight Tracker Summary */
 .weight-stats-card {
-  grid-column: span 4;
+  grid-column: span 6;
 }
 
 @media (max-width: 1024px) {
@@ -3769,13 +3769,24 @@ button, input, textarea, select { font: inherit; }
 }
 
 .streak-achievements-widget-card {
-  grid-column: span 4;
+  grid-column: span 6;
 }
 
 @media (max-width: 1024px) {
   .streak-achievements-widget-card {
     grid-column: span 12;
   }
+}
+
+/* ============================================================
+   AUTH FORM (shared by auth + setup pages)
+   ============================================================ */
+.auth-form {
+  display: grid;
+  gap: var(--sp-4);
+  max-width: 540px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 /* ============================================================
@@ -4471,7 +4482,7 @@ button, input, textarea, select { font: inherit; }
 /* Grid & Loading */
 .egyptian-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
   gap: var(--sp-5);
   width: 100%;
 }

@@ -105,11 +105,11 @@ export default function RecentFoodsQuickAdd({ onSuccess }) {
     const factor = item.servingSizeGrams > 0 ? currentServing / item.servingSizeGrams : 1;
     const payload = {
       foodName: item.name,
-      calories: Math.round(item.caloriesPerServing * factor * 10) / 10,
-      protein: Math.round(item.proteinPerServing * factor * 10) / 10,
-      carbs: Math.round(item.carbsPerServing * factor * 10) / 10,
-      fat: Math.round(item.fatPerServing * factor * 10) / 10,
-      servingSizeGrams: Math.round(currentServing * 10) / 10,
+      calories: Math.round((item.caloriesPerServing * factor) || 0),
+      protein: Math.round((item.proteinPerServing * factor) || 0),
+      carbs: Math.round((item.carbsPerServing * factor) || 0),
+      fat: Math.round((item.fatPerServing * factor) || 0),
+      servingSizeGrams: Math.round(currentServing || 0),
       mealType: currentMealType,
       foodScanId: null,
       localFoodItemId: item.id
@@ -181,10 +181,10 @@ export default function RecentFoodsQuickAdd({ onSuccess }) {
           {filteredFoods.map(item => {
             const currentServing = servings[item.id] ?? item.servingSizeGrams;
             const factor = item.servingSizeGrams > 0 ? currentServing / item.servingSizeGrams : 1;
-            const calculatedCals = Math.round(item.caloriesPerServing * factor);
-            const calculatedProtein = Math.round(item.proteinPerServing * factor * 10) / 10;
-            const calculatedCarbs = Math.round(item.carbsPerServing * factor * 10) / 10;
-            const calculatedFat = Math.round(item.fatPerServing * factor * 10) / 10;
+            const calculatedCals = Math.round((item.caloriesPerServing * factor) || 0);
+            const calculatedProtein = Math.round((item.proteinPerServing * factor) || 0);
+            const calculatedCarbs = Math.round((item.carbsPerServing * factor) || 0);
+            const calculatedFat = Math.round((item.fatPerServing * factor) || 0);
             
             const isLogged = loggedItems[item.id];
             const isLogging = isLoggingItem[item.id];

@@ -97,6 +97,11 @@
   box-shadow: var(--shadow-md);
 }
 
+.mygoal-card--hero {
+  background: linear-gradient(to bottom right, var(--surface) 0%, var(--surface-2) 100%);
+  border-top: 4px solid var(--accent);
+}
+
 .mygoal-card__header {
   display: flex;
   justify-content: space-between;

@@ -14,5 +14,6 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+.vs/
 MacrosTrackerAPI/src/GymScan.API/wwwroot/uploads/scans/*
 !MacrosTrackerAPI/src/GymScan.API/wwwroot/uploads/scans/.gitkeep

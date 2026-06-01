@@ -108,8 +108,8 @@ export default function DashboardPage() {
 
   // Prefill input weight once profile query completes
   useEffect(() => {
-    if (profileQuery.data?.WeightKg) {
-      setInputWeight(profileQuery.data.WeightKg.toString());
+    if (profileQuery.data?.weightKg) {
+      setInputWeight(profileQuery.data.weightKg.toString());
     }
   }, [profileQuery.data]);
 
@@ -125,14 +125,14 @@ export default function DashboardPage() {
   // Weight Update Mutation
   const weightMutation = useMutation({
     mutationFn: (newWeight) => {
-      const currentProfile = profileQuery.data;
+      const currentProfile = profileQuery.data || {};
       const payload = {
-        firstName: currentProfile?.FirstName || user?.firstName || "there",
-        lastName: currentProfile?.LastName || user?.lastName || "",
+        firstName: currentProfile?.firstName || user?.firstName || "there",
+        lastName: currentProfile?.lastName || user?.lastName || "",
         weightKg: parseFloat(newWeight),
-        heightCm: currentProfile?.HeightCm || 175,
-        age: currentProfile?.Age || 25,
-        gender: currentProfile?.Gender || "Male",
+        heightCm: currentProfile?.heightCm || 175,
+        age: currentProfile?.age || 25,
+        gender: currentProfile?.gender || "Male",
       };
       return upsertProfile(payload);
     },
@@ -180,7 +180,7 @@ export default function DashboardPage() {
   const goal = diaryData.goals || null;
   const goalProfile = goalProfileQuery.data || null;
 
-  const currentWeight = profileQuery.data?.WeightKg || user?.weightKg || 80;
+  const currentWeight = profileQuery.data?.weightKg || user?.weightKg || 80;
 
   // Calorie Ring Calculations
   const consumedCal = Math.round(summary.totalCalories || 0);
@@ -195,24 +195,24 @@ export default function DashboardPage() {
   const strokeDashoffset = circumference - (calPct / 100) * circumference;
 
   // Macro progress bars
-  const pConsumed = summary.totalProtein || 0;
-  const pTarget = goal?.proteinTarget || goalProfile?.dailyProteinGrams || 120;
+  const pConsumed = Math.round(summary.totalProtein || 0);
+  const pTarget = Math.round(goal?.proteinTarget || goalProfile?.dailyProteinGrams || 120);
   const pPct = pTarget > 0 ? Math.min((pConsumed / pTarget) * 100, 100) : 0;
   const pOver = pConsumed > pTarget;
 
-  const cConsumed = summary.totalCarbs || 0;
-  const cTarget = goal?.carbsTarget || goalProfile?.dailyCarbsGrams || 200;
+  const cConsumed = Math.round(summary.totalCarbs || 0);
+  const cTarget = Math.round(goal?.carbsTarget || goalProfile?.dailyCarbsGrams || 200);
   const cPct = cTarget > 0 ? Math.min((cConsumed / cTarget) * 100, 100) : 0;
   const cOver = cConsumed > cTarget;
 
-  const fConsumed = summary.totalFat || 0;
-  const fTarget = goal?.fatTarget || goalProfile?.dailyFatGrams || 70;
+  const fConsumed = Math.round(summary.totalFat || 0);
+  const fTarget = Math.round(goal?.fatTarget || goalProfile?.dailyFatGrams || 70);
   const fPct = fTarget > 0 ? Math.min((fConsumed / fTarget) * 100, 100) : 0;
   const fOver = fConsumed > fTarget;
 
   // Active Streak details
   const currentStreak = streaksQuery.data?.currentStreak ?? 0;
-  const hitRate = streaksQuery.data?.goalHitRate ?? 0;
+  const hitRate = Math.round(streaksQuery.data?.goalHitRate ?? 0);
 
   // Generate dynamic AI Coach recommendations
   const recommendation = generateRecommendation({
@@ -287,7 +287,7 @@ export default function DashboardPage() {
   })();
   // 7-day calories trend mapping
   const chartDays = trendsQuery.data?.Days || [];
-  const chartGoals = trendsQuery.data?.Goals?.caloriesTarget || targetCal;
+  const chartGoals = Math.round(trendsQuery.data?.Goals?.caloriesTarget || targetCal);
 
   return (
     <PageShell>
@@ -297,7 +297,7 @@ export default function DashboardPage() {
         <section className="premium-greeting">
           <div className="premium-greeting__info">
             <span className="eyebrow" style={{ marginBottom: '4px' }}>Welcome back</span>
-            <h1 className="premium-greeting__title">{profileQuery.data?.FirstName || user?.firstName || "there"}</h1>
+            <h1 className="premium-greeting__title">{profileQuery.data?.firstName || user?.firstName || "there"}</h1>
             <p className="premium-greeting__sub">Here is your daily fitness and macro roadmap at a glance.</p>
           </div>
           <div className="premium-greeting__date">
@@ -355,18 +355,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Weekly Goal Adherence Widget */}
-        <section style={{ gridColumn: "span 12" }}>
-          <WeeklyGoalAdherence />
-        </section>
-
-        {/* Quick Add Recent Foods Widget */}
-        <section className="premium-card" style={{ gridColumn: "span 12", padding: "var(--sp-5)" }}>
-          <RecentFoodsQuickAdd onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ["diary-today"] });
-            queryClient.invalidateQueries({ queryKey: ["progress-trends-7"] });
-          }} />
-        </section>
+        {/* Widgets reordered - Adherence & Quick Add moved below Daily Progress */}
 
         {/* Circular Calories Widget */}
         <section className="premium-card calorie-circle-card">
@@ -506,71 +495,6 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Weekly Stats Calories Chart */}
-        <section className="premium-card weekly-stats-card">
-          <div className="premium-card__header">
-            <div className="premium-card__title-area">
-              <span className="premium-card__icon"><TrendingUp size={18} /></span>
-              <h2 className="premium-card__title">Weekly Calories Summary</h2>
-            </div>
-            <Link to="/progress" className="premium-card__link">Details</Link>
-          </div>
-
-          <div style={{ flex: 1, minHeight: "220px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-            {chartDays.length === 0 ? (
-              <div style={{ textAlign: "center", color: "var(--text-3)", padding: "40px 0" }}>
-                No progress log trends found yet.
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={chartDays} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis 
-                    dataKey="Date" 
-                    tickFormatter={formatChartDate} 
-                    tick={{ fill: "var(--text-2)", fontSize: 11, fontWeight: 500 }} 
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis 
-                    tick={{ fill: "var(--text-2)", fontSize: 11 }} 
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{ 
-                      background: "var(--surface)", 
-                      border: "1px solid var(--border)", 
-                      borderRadius: "var(--radius-md)",
-                      boxShadow: "var(--shadow-md)"
-                    }}
-                    labelStyle={{ fontWeight: "700", color: "var(--text-1)", fontSize: "12px", marginBottom: "4px" }}
-                    itemStyle={{ color: "var(--accent)", fontSize: "12px" }}
-                    labelFormatter={(v) => formatDate(v)}
-                    formatter={(value) => [`${Math.round(value)} kcal`, "Intake"]}
-                  />
-                  <Bar dataKey="Calories" fill="var(--accent)" radius={[4, 4, 0, 0]} barSize={28} />
-                  {chartGoals != null && (
-                    <ReferenceLine 
-                      y={chartGoals} 
-                      stroke="var(--error)" 
-                      strokeDasharray="4 4" 
-                      label={{ 
-                        value: "Daily Goal", 
-                        position: "insideTopRight", 
-                        fill: "var(--error)", 
-                        fontSize: 10, 
-                        fontWeight: 600,
-                        offset: 5
-                      }} 
-                    />
-                  )}
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </section>
-
         {/* Water Hydration Intake Tracker */}
         <section className="premium-card water-intake-card">
           <div className="premium-card__header">
@@ -622,6 +546,50 @@ export default function DashboardPage() {
           </div>
         </section>
 
+        {/* Quick Actions Panel */}
+        <section className="premium-card quick-actions-card">
+          <div className="premium-card__header">
+            <div className="premium-card__title-area">
+              <span className="premium-card__icon"><Sparkles size={18} style={{ color: "var(--accent)" }} /></span>
+              <h2 className="premium-card__title">Smart Shortcuts</h2>
+            </div>
+          </div>
+          <div className="quick-actions-grid">
+            <Link to="/scan" className="action-card-premium action-card-premium--highlight">
+              <div className="action-card-premium__icon-box">
+                <Camera size={20} />
+              </div>
+              <div className="action-card-premium__text">
+                <span className="action-card-premium__label">AI Scan Plate</span>
+                <span className="action-card-premium__sub">Instant nutrition scan</span>
+              </div>
+              <ChevronRight size={16} style={{ marginLeft: "auto", color: "var(--accent)" }} />
+            </Link>
+
+            <Link to="/log" className="action-card-premium">
+              <div className="action-card-premium__icon-box">
+                <Search size={20} />
+              </div>
+              <div className="action-card-premium__text">
+                <span className="action-card-premium__label">Log Food Manually</span>
+                <span className="action-card-premium__sub">Search database items</span>
+              </div>
+              <ChevronRight size={16} style={{ marginLeft: "auto", color: "var(--text-3)" }} />
+            </Link>
+
+            <Link to="/log?tab=egyptian" className="action-card-premium" style={{ border: '1px solid oklch(0.85 0.05 75)' }}>
+              <div className="action-card-premium__icon-box" style={{ background: 'oklch(0.94 0.03 75)', color: 'oklch(0.55 0.12 75)' }}>
+                <Sparkles size={20} />
+              </div>
+              <div className="action-card-premium__text">
+                <span className="action-card-premium__label">Egyptian Express</span>
+                <span className="action-card-premium__sub">Koshary, Ful & Falafel quick log</span>
+              </div>
+              <ChevronRight size={16} style={{ marginLeft: "auto", color: "oklch(0.55 0.12 75)" }} />
+            </Link>
+          </div>
+        </section>
+
         {/* Streak Achievements Widget */}
         <section className="premium-card streak-achievements-widget-card">
           <div className="premium-card__header">
@@ -647,7 +615,7 @@ export default function DashboardPage() {
           <div className="weight-content">
             <div className="weight-row-main">
               <div className="weight-badge">
-                <span className="weight-val">{currentWeight}</span>
+                <span className="weight-val">{parseFloat(currentWeight).toFixed(1)}</span>
                 <span className="weight-unit">kg current</span>
               </div>
               <span className="weight-change-indicator weight-change-indicator--neutral">
@@ -689,50 +657,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Quick Actions Panel */}
-        <section className="premium-card quick-actions-card">
-          <div className="premium-card__header" style={{ marginBottom: "16px" }}>
-            <div className="premium-card__title-area">
-              <span className="premium-card__icon"><Sparkles size={18} /></span>
-              <h2 className="premium-card__title">Smart Shortcuts</h2>
-            </div>
-          </div>
 
-          <div className="quick-actions-grid">
-            <Link to="/scan" className="action-card-premium action-card-premium--highlight">
-              <div className="action-card-premium__icon-box">
-                <Camera size={20} />
-              </div>
-              <div className="action-card-premium__text">
-                <span className="action-card-premium__label">AI Scan Plate</span>
-                <span className="action-card-premium__sub">Instant nutrition scan</span>
-              </div>
-              <ChevronRight size={16} style={{ marginLeft: "auto", color: "var(--accent)" }} />
-            </Link>
-
-            <Link to="/log" className="action-card-premium">
-              <div className="action-card-premium__icon-box">
-                <Search size={20} />
-              </div>
-              <div className="action-card-premium__text">
-                <span className="action-card-premium__label">Log Food Manually</span>
-                <span className="action-card-premium__sub">Search database items</span>
-              </div>
-              <ChevronRight size={16} style={{ marginLeft: "auto", color: "var(--text-3)" }} />
-            </Link>
-
-            <Link to="/log?tab=egyptian" className="action-card-premium" style={{ border: '1px solid oklch(0.85 0.05 75)' }}>
-              <div className="action-card-premium__icon-box" style={{ background: 'oklch(0.94 0.03 75)', color: 'oklch(0.55 0.12 75)' }}>
-                <Sparkles size={20} />
-              </div>
-              <div className="action-card-premium__text">
-                <span className="action-card-premium__label">Egyptian Express</span>
-                <span className="action-card-premium__sub">Koshary, Ful & Falafel quick log</span>
-              </div>
-              <ChevronRight size={16} style={{ marginLeft: "auto", color: "oklch(0.55 0.12 75)" }} />
-            </Link>
-          </div>
-        </section>
 
         {/* Today's Meals Section */}
         <section className="premium-card today-meals-card">
@@ -759,58 +684,80 @@ export default function DashboardPage() {
               {diaryData.mealGroups.map((group) => {
                 if (group.entries.length === 0) return null;
                 return (
-                  <div key={group.MealType} className="meal-type-group">
+                  <div key={group.mealType || group.MealType} className="meal-type-group">
                     <div className="meal-type-group__header">
                       <span className="meal-type-group__name">
-                        {group.MealType}
+                        {group.mealType || group.MealType}
                       </span>
                       <span className="meal-type-group__cal">
-                        {Math.round(group.GroupCalories)} kcal
+                        {Math.round(group.groupCalories ?? group.GroupCalories ?? 0)} kcal
                       </span>
                     </div>
                     <div>
-                      {group.entries.map((entry) => (
-                        <div key={entry.Id} className="meal-entry-row">
+                      {group.entries.map((entry) => {
+                        const entryId = entry.id || entry.Id;
+                        const foodName = entry.foodName || entry.FoodName || "";
+                        const calories = entry.calories || entry.Calories || 0;
+                        const protein = entry.protein || entry.Protein || 0;
+                        const carbs = entry.carbs || entry.Carbs || 0;
+                        const fat = entry.fat || entry.Fat || 0;
+                        const servingGrams = entry.servingSizeGrams || entry.ServingSizeGrams || null;
+
+                        return (
+                        <div key={entryId} className="meal-entry-row">
                           <div className="meal-entry-info">
-                            <span className="meal-entry-name">{entry.FoodName}</span>
+                            <span className="meal-entry-name">{foodName}</span>
                             <div className="meal-entry-meta">
-                              {entry.ServingSizeGrams && (
-                                <span style={{ fontWeight: "600" }}>{Math.round(entry.ServingSizeGrams)}g</span>
+                              {servingGrams && (
+                                <span style={{ fontWeight: "600" }}>{Math.round(servingGrams)}g</span>
                               )}
                               <span className="meal-entry-macro-badge meal-entry-macro-badge--p">
-                                P: {Math.round(entry.Protein)}g
+                                P: {Math.round(protein)}g
                               </span>
                               <span className="meal-entry-macro-badge meal-entry-macro-badge--c">
-                                C: {Math.round(entry.Carbs)}g
+                                C: {Math.round(carbs)}g
                               </span>
                               <span className="meal-entry-macro-badge meal-entry-macro-badge--f">
-                                F: {Math.round(entry.Fat)}g
+                                F: {Math.round(fat)}g
                               </span>
                             </div>
                           </div>
                           <div className="meal-entry-right">
-                            <span className="meal-entry-cal">{Math.round(entry.Calories)} kcal</span>
+                            <span className="meal-entry-cal">{Math.round(calories)} kcal</span>
                             <button
                               onClick={() => {
-                                if (window.confirm(`Are you sure you want to delete "${entry.FoodName}"?`)) {
-                                  deleteMutation.mutate(entry.Id);
+                                if (window.confirm(`Are you sure you want to delete "${foodName}"?`)) {
+                                  deleteMutation.mutate(entryId);
                                 }
                               }}
                               className="meal-entry-delete"
                               disabled={deleteMutation.isPending}
-                              aria-label={`Delete log ${entry.FoodName}`}
+                              aria-label={`Delete log ${foodName}`}
                             >
                               <Trash2 size={14} />
                             </button>
                           </div>
                         </div>
-                      ))}
+                      )})}
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+        </section>
+
+        {/* Quick Add Recent Foods Widget */}
+        <section className="premium-card" style={{ gridColumn: "span 12", padding: "var(--sp-5)" }}>
+          <RecentFoodsQuickAdd onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["diary-today"] });
+            queryClient.invalidateQueries({ queryKey: ["progress-trends-7"] });
+          }} />
+        </section>
+
+        {/* Weekly Goal Adherence Widget */}
+        <section style={{ gridColumn: "span 12" }}>
+          <WeeklyGoalAdherence />
         </section>
 
       </div>
