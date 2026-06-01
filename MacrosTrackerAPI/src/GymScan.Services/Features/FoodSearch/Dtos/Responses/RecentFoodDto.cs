@@ -8,4 +8,6 @@ public sealed record RecentFoodDto(
     decimal CarbsPerServing,
     decimal FatPerServing,
     decimal ServingSizeGrams,
-    decimal LastServingSizeGrams);
+    decimal LastServingSizeGrams,
+    string? ImagePath,
+    DateTime LastUsedAt);

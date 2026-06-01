@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import PageShell from "../components/PageShell";
 import MacroProgressBar from "../components/MacroProgressBar";
@@ -9,6 +9,8 @@ import WeeklySummaryTable from "../components/WeeklySummaryTable";
 import { getDiary } from "../api/diaryClient";
 import { getProgressTrends, getProgressStreaks, getWeeklySummary } from "../api/progressClient";
 import { motion, AnimatePresence } from "framer-motion";
+import { StreakAchievements } from "../components/StreakAchievements";
+import WeeklyGoalAdherence from "../components/WeeklyGoalAdherence";
 
 const tabVariants = {
   initial: { opacity: 0, y: 10 },
@@ -16,16 +18,36 @@ const tabVariants = {
   exit: { opacity: 0, y: -10 }
 };
 
+function formatDateLocal(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getMonday(offsetWeeks) {
   const d = new Date();
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offsetWeeks * 7);
-  return d.toISOString().slice(0, 10);
+  return formatDateLocal(d);
 }
 
 function ProgressPage() {
-  const [activeTab, setActiveTab] = useState("today");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabQuery = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabQuery || "today");
   const [selectedRange, setSelectedRange] = useState(7);
   const [weekOffset, setWeekOffset] = useState(0);
+
+  useEffect(() => {
+    if (tabQuery && tabQuery !== activeTab) {
+      setActiveTab(tabQuery);
+    }
+  }, [tabQuery, activeTab]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  };
 
   const weekStart = getMonday(weekOffset);
 
@@ -68,7 +90,7 @@ function ProgressPage() {
             key={t.id}
             type="button"
             className={`tab-bar__btn${activeTab === t.id ? " tab-bar__btn--active" : ""}`}
-            onClick={() => setActiveTab(t.id)}
+            onClick={() => handleTabChange(t.id)}
           >
             {t.label}
           </button>
@@ -172,14 +194,17 @@ function ProgressPage() {
               }
               return (
                 <>
-                  <div className="streak-stats">
-                    <div className="streak-counter">
-                      <span className="streak-counter__number">{currentStreak}</span>
-                      <span className="streak-counter__label">day streak</span>
-                    </div>
-                    <p className="streak-hit-rate">{goalHitRate}% of logged days on goal (last 30 days)</p>
+                  <StreakAchievements currentStreak={currentStreak} isCompact={false} />
+                  
+                  <div style={{ marginTop: "var(--sp-8)", borderTop: "1px solid var(--border)", paddingTop: "var(--sp-6)" }}>
+                    <h4 className="streak-badges-grid-title" style={{ marginTop: 0, marginBottom: "var(--sp-3)" }}>
+                      Goal Consistency Heatmap
+                    </h4>
+                    <p className="streak-hit-rate" style={{ marginBottom: "var(--sp-4)" }}>
+                      You have hit your macro targets on <strong>{goalHitRate}%</strong> of logged days over the last 30 days. Keep it up!
+                    </p>
+                    <GoalHeatmap days={heatmapDays} />
                   </div>
-                  <GoalHeatmap days={heatmapDays} />
                 </>
               );
             })()}
@@ -196,16 +221,23 @@ function ProgressPage() {
             exit="exit"
             transition={{ duration: 0.2 }}
           >
-            {weeklyQuery.isLoading && <div className="spinner spinner--lg" />}
-            {weeklyQuery.isError && <div className="alert alert--error">Failed to load weekly summary. Please try again.</div>}
-            {weeklyQuery.data && (
-              <WeeklySummaryTable
-                summary={weeklyQuery.data}
-                onPrev={() => setWeekOffset(o => o - 1)}
-                onNext={() => setWeekOffset(o => o + 1)}
-                isCurrentWeek={weekOffset === 0}
-              />
-            )}
+            {/* Premium Analytics Goal Adherence Widget */}
+            <WeeklyGoalAdherence />
+
+            {/* Detailed Table Breakdown */}
+            <div style={{ marginTop: "var(--sp-8)", borderTop: "1px solid var(--border)", paddingTop: "var(--sp-6)" }}>
+              <h3 style={{ fontSize: "var(--text-lg)", fontWeight: 700, marginBottom: "var(--sp-4)" }}>Daily Calorie Log</h3>
+              {weeklyQuery.isLoading && <div className="spinner spinner--lg" />}
+              {weeklyQuery.isError && <div className="alert alert--error">Failed to load weekly summary. Please try again.</div>}
+              {weeklyQuery.data && (
+                <WeeklySummaryTable
+                  summary={weeklyQuery.data}
+                  onPrev={() => setWeekOffset(o => o - 1)}
+                  onNext={() => setWeekOffset(o => o + 1)}
+                  isCurrentWeek={weekOffset === 0}
+                />
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

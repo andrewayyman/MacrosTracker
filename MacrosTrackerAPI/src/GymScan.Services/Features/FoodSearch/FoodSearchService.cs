@@ -41,6 +41,7 @@ public sealed class FoodSearchService : IFoodSearchService
             .AsNoTracking()
             .Where(m => m.UserId == userId && m.LocalFoodItemId != null && m.LoggedAt >= cutoff)
             .Include(m => m.LocalFoodItem)
+            .Include(m => m.FoodScan)
             .OrderByDescending(m => m.LoggedAt)
             .ToListAsync();
 
@@ -49,7 +50,10 @@ public sealed class FoodSearchService : IFoodSearchService
             .Select(g => g.First())
             .Take(10)
             .Where(m => m.LocalFoodItem != null)
-            .Select(m => m.LocalFoodItem!.ToRecentFoodDto(m.ServingSizeGrams ?? m.LocalFoodItem!.TypicalServingSizeGrams))
+            .Select(m => m.LocalFoodItem!.ToRecentFoodDto(
+                m.ServingSizeGrams ?? m.LocalFoodItem!.TypicalServingSizeGrams,
+                m.FoodScan?.ImagePath,
+                m.LoggedAt))
             .ToList();
 
         return ServiceResponse<List<RecentFoodDto>>.Success(dtos, $"Found {dtos.Count} recent food(s).");

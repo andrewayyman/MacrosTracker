@@ -18,7 +18,8 @@ import {
   Info,
   Beef,
   Wheat,
-  Pizza
+  Pizza,
+  Sliders
 } from "lucide-react";
 import {
   BarChart,
@@ -36,6 +37,11 @@ import { useAuthStore } from "../store/authStore";
 import { getDiary, deleteDiaryEntry } from "../api/diaryClient";
 import { getProgressStreaks, getProgressTrends } from "../api/progressClient";
 import { getProfile, upsertProfile } from "../api/profileClient";
+import { getGoalProfile } from "../api/userGoalProfileClient";
+import { generateRecommendation } from "../utils/aiCoach";
+import { StreakAchievements } from "../components/StreakAchievements";
+import WeeklyGoalAdherence from "../components/WeeklyGoalAdherence";
+import RecentFoodsQuickAdd from "../components/RecentFoodsQuickAdd";
 
 // Helpers
 function formatDate(isoDate) {
@@ -92,6 +98,14 @@ export default function DashboardPage() {
     queryFn: () => getProfile().then((r) => r.data),
   });
 
+  const goalProfileQuery = useQuery({
+    queryKey: ["goal-profile"],
+    queryFn: () => getGoalProfile().then((r) => r.data).catch((err) => {
+      if (err.response?.status === 404) return null;
+      throw err;
+    }),
+  });
+
   // Prefill input weight once profile query completes
   useEffect(() => {
     if (profileQuery.data?.WeightKg) {
@@ -144,7 +158,7 @@ export default function DashboardPage() {
   };
 
   // Loading Skeleton
-  const isLoading = todayQuery.isLoading || streaksQuery.isLoading || profileQuery.isLoading || trendsQuery.isLoading;
+  const isLoading = todayQuery.isLoading || streaksQuery.isLoading || profileQuery.isLoading || trendsQuery.isLoading || goalProfileQuery.isLoading;
 
   if (isLoading) {
     return (
@@ -164,12 +178,13 @@ export default function DashboardPage() {
   const diaryData = todayQuery.data || { dailySummary: {}, mealGroups: [] };
   const summary = diaryData.dailySummary || { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 };
   const goal = diaryData.goals || null;
+  const goalProfile = goalProfileQuery.data || null;
 
   const currentWeight = profileQuery.data?.WeightKg || user?.weightKg || 80;
 
   // Calorie Ring Calculations
   const consumedCal = Math.round(summary.totalCalories || 0);
-  const targetCal = goal?.caloriesTarget || 2000;
+  const targetCal = goal?.caloriesTarget || goalProfile?.dailyCaloriesTarget || 2000;
   const calPct = Math.min((consumedCal / targetCal) * 100, 100);
   const remainingCal = targetCal - consumedCal;
   const isCalOver = remainingCal < 0;
@@ -181,45 +196,95 @@ export default function DashboardPage() {
 
   // Macro progress bars
   const pConsumed = summary.totalProtein || 0;
-  const pTarget = goal?.proteinTarget || 120;
+  const pTarget = goal?.proteinTarget || goalProfile?.dailyProteinGrams || 120;
   const pPct = pTarget > 0 ? Math.min((pConsumed / pTarget) * 100, 100) : 0;
   const pOver = pConsumed > pTarget;
 
   const cConsumed = summary.totalCarbs || 0;
-  const cTarget = goal?.carbsTarget || 200;
+  const cTarget = goal?.carbsTarget || goalProfile?.dailyCarbsGrams || 200;
   const cPct = cTarget > 0 ? Math.min((cConsumed / cTarget) * 100, 100) : 0;
   const cOver = cConsumed > cTarget;
 
   const fConsumed = summary.totalFat || 0;
-  const fTarget = goal?.fatTarget || 70;
+  const fTarget = goal?.fatTarget || goalProfile?.dailyFatGrams || 70;
   const fPct = fTarget > 0 ? Math.min((fConsumed / fTarget) * 100, 100) : 0;
   const fOver = fConsumed > fTarget;
-
-  // AI Nutrition Coach Logic
-  let aiHeadline = "You're on track!";
-  let aiText = "Maintain a steady intake of protein and stay hydrated. You are doing fantastic today!";
-
-  if (consumedCal === 0) {
-    aiHeadline = "Ready to start your day?";
-    aiText = "Your nutrition diary is empty. Scan your breakfast with AI or search for logged foods manually to start tracking!";
-  } else if (pPct < 50 && remainingCal > 0) {
-    aiHeadline = "Boost your protein intake";
-    aiText = `You've reached only ${Math.round(pPct)}% of your protein goal. Focus on adding lean meat, fish, eggs, or Greek yogurt to fuel your muscle recovery.`;
-  } else if (isCalOver) {
-    aiHeadline = "Calorie target exceeded";
-    aiText = "You've gone slightly over your daily calorie allowance. For remaining meals, prioritize low-calorie, high-volume vegetables and lots of water.";
-  } else if (waterCups < 4) {
-    aiHeadline = "Stay Hydrated";
-    aiText = `You've only logged ${waterCups} cups of water. Hydration is key to high metabolism and muscle stamina. Try to reach at least 8 cups today!`;
-  } else if (pPct >= 80 && calPct < 90) {
-    aiHeadline = "Excellent fuel efficiency!";
-    aiText = "Outstanding job meeting your protein target while maintaining a healthy calorie deficit. Keep up this high-quality nutrition rhythm.";
-  }
 
   // Active Streak details
   const currentStreak = streaksQuery.data?.currentStreak ?? 0;
   const hitRate = streaksQuery.data?.goalHitRate ?? 0;
 
+  // Generate dynamic AI Coach recommendations
+  const recommendation = generateRecommendation({
+    consumedCal,
+    targetCal,
+    pConsumed,
+    pTarget,
+    cConsumed,
+    cTarget,
+    fConsumed,
+    fTarget,
+    currentStreak,
+    goalType: goalProfile?.goalType || null,
+    waterCups,
+    isGoalProfileLoading: goalProfileQuery.isLoading,
+    isGoalProfileError: goalProfileQuery.isError,
+    hasGoalProfile: !!goalProfile
+  });
+
+  // Map recommendation icon to Lucide icon components
+  const IconComponent = (() => {
+    switch (recommendation.icon) {
+      case "Sparkles": return Sparkles;
+      case "Sliders": return Sliders;
+      case "Camera": return Camera;
+      case "Beef": return Beef;
+      case "Flame": return Flame;
+      case "Wheat": return Wheat;
+      case "Pizza": return Pizza;
+      case "Droplets": return Droplets;
+      case "CheckCircle2": return CheckCircle2;
+      case "Info": return Info;
+      default: return Sparkles;
+    }
+  })();
+
+  // Set type-specific styling
+  const typeStyles = (() => {
+    switch (recommendation.type) {
+      case "warning":
+        return {
+          iconBg: "oklch(0.490 0.170 25 / 0.1)",
+          iconColor: "var(--error)",
+          glowColor: "linear-gradient(90deg, var(--error) 0%, var(--warning) 100%)",
+        };
+      case "success":
+        return {
+          iconBg: "var(--accent-subtle)",
+          iconColor: "var(--success)",
+          glowColor: "linear-gradient(90deg, var(--success) 0%, var(--accent) 100%)",
+        };
+      case "tip":
+      case "info":
+        return {
+          iconBg: "var(--accent-subtle)",
+          iconColor: "var(--accent)",
+          glowColor: "var(--ai-glow)",
+        };
+      case "setup":
+        return {
+          iconBg: "oklch(0.580 0.140 72 / 0.1)",
+          iconColor: "var(--warning)",
+          glowColor: "linear-gradient(90deg, var(--warning) 0%, oklch(0.64 0.2 300) 100%)",
+        };
+      default:
+        return {
+          iconBg: "var(--accent-subtle)",
+          iconColor: "var(--accent)",
+          glowColor: "var(--ai-glow)",
+        };
+    }
+  })();
   // 7-day calories trend mapping
   const chartDays = trendsQuery.data?.Days || [];
   const chartGoals = trendsQuery.data?.Goals?.caloriesTarget || targetCal;
@@ -243,13 +308,64 @@ export default function DashboardPage() {
 
         {/* AI Health Coach Banner */}
         <section className="ai-recommendations-card">
-          <div className="ai-recommendations-card__icon-wrapper">
-            <Sparkles size={24} />
+          <div 
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '3px',
+              background: typeStyles.glowColor,
+              zIndex: 2
+            }}
+          />
+          <div 
+            className="ai-recommendations-card__icon-wrapper"
+            style={{
+              background: typeStyles.iconBg,
+              color: typeStyles.iconColor
+            }}
+          >
+            <IconComponent size={24} />
           </div>
           <div className="ai-recommendations-card__content">
-            <h3 className="ai-recommendations-card__headline">{aiHeadline}</h3>
-            <p className="ai-recommendations-card__text">{aiText}</p>
+            <h3 className="ai-recommendations-card__headline">{recommendation.headline}</h3>
+            <p className="ai-recommendations-card__text">{recommendation.text}</p>
+            {recommendation.actionLink && (
+              <div style={{ marginTop: '12px' }}>
+                <Link 
+                  to={recommendation.actionLink} 
+                  className="btn-modern-primary"
+                  style={{ 
+                    fontSize: '12px', 
+                    padding: '8px 16px', 
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    borderRadius: 'var(--radius-md)',
+                    minHeight: 'auto',
+                    height: '32px'
+                  }}
+                >
+                  <span>{recommendation.actionText}</span>
+                  <ChevronRight size={14} />
+                </Link>
+              </div>
+            )}
           </div>
+        </section>
+
+        {/* Weekly Goal Adherence Widget */}
+        <section style={{ gridColumn: "span 12" }}>
+          <WeeklyGoalAdherence />
+        </section>
+
+        {/* Quick Add Recent Foods Widget */}
+        <section className="premium-card" style={{ gridColumn: "span 12", padding: "var(--sp-5)" }}>
+          <RecentFoodsQuickAdd onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["diary-today"] });
+            queryClient.invalidateQueries({ queryKey: ["progress-trends-7"] });
+          }} />
         </section>
 
         {/* Circular Calories Widget */}
@@ -506,6 +622,18 @@ export default function DashboardPage() {
           </div>
         </section>
 
+        {/* Streak Achievements Widget */}
+        <section className="premium-card streak-achievements-widget-card">
+          <div className="premium-card__header">
+            <div className="premium-card__title-area">
+              <span className="premium-card__icon"><Flame size={18} /></span>
+              <h2 className="premium-card__title">Streak Milestones</h2>
+            </div>
+            <Link to="/progress?tab=streaks" className="premium-card__link">All Badges</Link>
+          </div>
+          <StreakAchievements currentStreak={currentStreak} isCompact={true} />
+        </section>
+
         {/* Weight Log Tracker Widget */}
         <section className="premium-card weight-stats-card">
           <div className="premium-card__header">
@@ -591,6 +719,17 @@ export default function DashboardPage() {
                 <span className="action-card-premium__sub">Search database items</span>
               </div>
               <ChevronRight size={16} style={{ marginLeft: "auto", color: "var(--text-3)" }} />
+            </Link>
+
+            <Link to="/log?tab=egyptian" className="action-card-premium" style={{ border: '1px solid oklch(0.85 0.05 75)' }}>
+              <div className="action-card-premium__icon-box" style={{ background: 'oklch(0.94 0.03 75)', color: 'oklch(0.55 0.12 75)' }}>
+                <Sparkles size={20} />
+              </div>
+              <div className="action-card-premium__text">
+                <span className="action-card-premium__label">Egyptian Express</span>
+                <span className="action-card-premium__sub">Koshary, Ful & Falafel quick log</span>
+              </div>
+              <ChevronRight size={16} style={{ marginLeft: "auto", color: "oklch(0.55 0.12 75)" }} />
             </Link>
           </div>
         </section>

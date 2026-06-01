@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import PageShell from "../components/PageShell";
 import { getGoalProfile, saveGoalProfile, previewGoalCalculation } from "../api/userGoalProfileClient";
+import { getDailyGoal, getSuggestedGoal, upsertDailyGoal } from "../api/nutritionGoalsClient";
 import { getProgressStreaks } from "../api/progressClient";
 import { parseServiceErrors } from "../utils/serviceErrors";
 import "./MyGoal.css";
@@ -84,6 +85,17 @@ function MyGoalPage() {
   const [notFound, setNotFound] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
   
+  // Custom Nutrition Targets State
+  const [dailyGoal, setDailyGoal] = useState(null);
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  const [customSaving, setCustomSaving] = useState(false);
+  const [customForm, setCustomForm] = useState({
+    caloriesTarget: "",
+    proteinGramsTarget: "",
+    carbohydratesGramsTarget: "",
+    fatGramsTarget: ""
+  });
+
   // Interactive Slider State (weeks to reach goal)
   const [timelineWeeks, setTimelineWeeks] = useState(8);
   
@@ -137,6 +149,25 @@ function MyGoalPage() {
       }
     } catch {
       // Fail silently for streaks
+    }
+
+    try {
+      const dailyGoalResult = await getDailyGoal();
+      if (!cancelled && dailyGoalResult?.data) {
+        setDailyGoal(dailyGoalResult.data);
+        const isCustom = dailyGoalResult.data.goalSource === "Custom";
+        setIsCustomMode(isCustom);
+        if (isCustom) {
+          setCustomForm({
+            caloriesTarget: dailyGoalResult.data.caloriesTarget ?? "",
+            proteinGramsTarget: dailyGoalResult.data.proteinGramsTarget ?? "",
+            carbohydratesGramsTarget: dailyGoalResult.data.carbohydratesGramsTarget ?? "",
+            fatGramsTarget: dailyGoalResult.data.fatGramsTarget ?? ""
+          });
+        }
+      }
+    } catch {
+      // Fail silently for daily goals
     }
 
     if (!cancelled) setLoading(false);
@@ -239,6 +270,75 @@ function MyGoalPage() {
       setFieldErrors(parsed.fieldErrors);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleCustomChange = (e) => {
+    const { name, value } = e.target;
+    setCustomForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const customTotalCals = useMemo(() => {
+    const p = Number(customForm.proteinGramsTarget) || 0;
+    const c = Number(customForm.carbohydratesGramsTarget) || 0;
+    const f = Number(customForm.fatGramsTarget) || 0;
+    return (p * 4) + (c * 4) + (f * 9);
+  }, [customForm]);
+
+  const handleSaveCustomGoals = async (e) => {
+    e.preventDefault();
+    setCustomSaving(true);
+    try {
+      const result = await upsertDailyGoal({
+        caloriesTarget: Number(customForm.caloriesTarget),
+        proteinGramsTarget: Number(customForm.proteinGramsTarget),
+        carbohydratesGramsTarget: Number(customForm.carbohydratesGramsTarget),
+        fatGramsTarget: Number(customForm.fatGramsTarget),
+        goalSource: "Custom"
+      });
+      if (result?.data) {
+        setDailyGoal(result.data);
+        setIsCustomMode(true);
+        setShowSuccessToast(true);
+        setTimeout(() => setShowSuccessToast(false), 4000);
+      }
+    } catch (err) {
+      console.error("Failed to save custom goals", err);
+    } finally {
+      setCustomSaving(false);
+    }
+  };
+
+  const handleResetToCalculated = async () => {
+    if (!window.confirm("Are you sure you want to revert to Auto Calculated targets? Your custom inputs will be lost.")) return;
+    setCustomSaving(true);
+    try {
+      const suggestedResult = await getSuggestedGoal();
+      if (suggestedResult?.data) {
+        const result = await upsertDailyGoal({
+          caloriesTarget: suggestedResult.data.caloriesTarget,
+          proteinGramsTarget: suggestedResult.data.proteinGramsTarget,
+          carbohydratesGramsTarget: suggestedResult.data.carbohydratesGramsTarget,
+          fatGramsTarget: suggestedResult.data.fatGramsTarget,
+          goalSource: "Calculated"
+        });
+        if (result?.data) {
+          setDailyGoal(result.data);
+          setIsCustomMode(false);
+          setCustomForm({
+            caloriesTarget: "",
+            proteinGramsTarget: "",
+            carbohydratesGramsTarget: "",
+            fatGramsTarget: ""
+          });
+          setShowSuccessToast(true);
+          setTimeout(() => setShowSuccessToast(false), 4000);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to reset goals", err);
+    } finally {
+      setCustomSaving(false);
     }
   };
 
@@ -380,6 +480,178 @@ function MyGoalPage() {
         {activeTab === "overview" && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-6)', position: 'relative', zIndex: 1 }}>
             
+            {/* Custom Targets Toggle */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'var(--sp-2)' }}>
+              <div className="mygoal-segmented-control" style={{ background: 'var(--surface-2)', padding: '6px', borderRadius: 'var(--radius-lg)', display: 'inline-flex', gap: '6px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)' }}>
+                <button
+                  type="button"
+                  className={`btn-segment ${!isCustomMode ? "active" : ""}`}
+                  onClick={() => setIsCustomMode(false)}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    background: !isCustomMode ? 'var(--surface)' : 'transparent',
+                    color: !isCustomMode ? 'var(--text-1)' : 'var(--text-2)',
+                    fontWeight: !isCustomMode ? '600' : '400',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    boxShadow: !isCustomMode ? 'var(--shadow-sm)' : 'none',
+                    transition: 'all 0.2s ease',
+                    fontSize: '13px'
+                  }}
+                >
+                  <BrainCircuit size={16} />
+                  <span>Auto Calculated Goals</span>
+                </button>
+                <button
+                  type="button"
+                  className={`btn-segment ${isCustomMode ? "active" : ""}`}
+                  onClick={() => {
+                    setIsCustomMode(true);
+                    if (!customForm.caloriesTarget) {
+                      setCustomForm({
+                        caloriesTarget: dailyGoal?.caloriesTarget ?? profile?.dailyCaloriesTarget ?? "",
+                        proteinGramsTarget: dailyGoal?.proteinGramsTarget ?? profile?.dailyProteinGrams ?? "",
+                        carbohydratesGramsTarget: dailyGoal?.carbohydratesGramsTarget ?? profile?.dailyCarbsGrams ?? "",
+                        fatGramsTarget: dailyGoal?.fatGramsTarget ?? profile?.dailyFatGrams ?? ""
+                      });
+                    }
+                  }}
+                  style={{
+                    padding: '8px 20px',
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    background: isCustomMode ? 'var(--surface)' : 'transparent',
+                    color: isCustomMode ? 'var(--text-1)' : 'var(--text-2)',
+                    fontWeight: isCustomMode ? '600' : '400',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    boxShadow: isCustomMode ? 'var(--shadow-sm)' : 'none',
+                    transition: 'all 0.2s ease',
+                    fontSize: '13px'
+                  }}
+                >
+                  <Sliders size={16} />
+                  <span>Custom Goals</span>
+                </button>
+              </div>
+            </div>
+
+            {isCustomMode ? (
+              <article className="mygoal-card">
+                <div className="mygoal-card__header">
+                  <div className="mygoal-card__title-group">
+                    <div className="mygoal-card__icon-box">
+                      <Sliders size={18} />
+                    </div>
+                    <h4 className="mygoal-card__title">Custom Nutrition Targets</h4>
+                  </div>
+                </div>
+                
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-2)', marginBottom: 'var(--sp-4)', lineHeight: 1.5 }}>
+                  Override the AI calculated targets with your own custom macro splits. Ensure your total calories align with your individual goals.
+                </p>
+
+                <form onSubmit={handleSaveCustomGoals} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+                  <div className="mygoal-form-grid">
+                    <div className="mygoal-input-group">
+                      <label className="mygoal-input-label">
+                        <Flame size={13} />
+                        <span>Daily Calories (kcal)</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="caloriesTarget"
+                        value={customForm.caloriesTarget}
+                        onChange={handleCustomChange}
+                        className="mygoal-form-input"
+                        required
+                        min="500"
+                        max="10000"
+                      />
+                    </div>
+                    <div className="mygoal-input-group">
+                      <label className="mygoal-input-label">
+                        <Beef size={13} />
+                        <span>Protein (g)</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="proteinGramsTarget"
+                        value={customForm.proteinGramsTarget}
+                        onChange={handleCustomChange}
+                        className="mygoal-form-input"
+                        required
+                        min="0"
+                        max="1000"
+                      />
+                    </div>
+                    <div className="mygoal-input-group">
+                      <label className="mygoal-input-label">
+                        <Wheat size={13} />
+                        <span>Carbohydrates (g)</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="carbohydratesGramsTarget"
+                        value={customForm.carbohydratesGramsTarget}
+                        onChange={handleCustomChange}
+                        className="mygoal-form-input"
+                        required
+                        min="0"
+                        max="1000"
+                      />
+                    </div>
+                    <div className="mygoal-input-group">
+                      <label className="mygoal-input-label">
+                        <Pizza size={13} />
+                        <span>Fats (g)</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="fatGramsTarget"
+                        value={customForm.fatGramsTarget}
+                        onChange={handleCustomChange}
+                        className="mygoal-form-input"
+                        required
+                        min="0"
+                        max="1000"
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ padding: 'var(--sp-4)', background: 'var(--surface-2)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-1)', fontWeight: '600' }}>Macro Calorie Verification</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-2)' }}>4 kcal/g Protein & Carbs, 9 kcal/g Fat</span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontWeight: '700', fontSize: 'var(--text-lg)', color: Math.abs(customTotalCals - customForm.caloriesTarget) > 50 ? 'var(--warning)' : 'var(--success)' }}>
+                        {customTotalCals} kcal
+                      </span>
+                      {Math.abs(customTotalCals - customForm.caloriesTarget) > 50 && (
+                        <div style={{ fontSize: '11px', color: 'var(--warning)', marginTop: '2px' }}>Differs from target</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mygoal-form-actions" style={{ marginTop: 'var(--sp-2)' }}>
+                    <button type="submit" className="button-primary" disabled={customSaving} style={{ flex: 1 }}>
+                      {customSaving ? "Saving..." : "Save Custom Targets"}
+                    </button>
+                    <button type="button" className="button-secondary" onClick={handleResetToCalculated} disabled={customSaving}>
+                      Reset to Calculated
+                    </button>
+                  </div>
+                </form>
+              </article>
+            ) : (
+              <>
             {/* Warning Banner if Calorie Minimum floor applied */}
             {profile.isCalorieMinimumApplied && (
               <div className="mygoal-notice-bar">
@@ -506,6 +778,8 @@ function MyGoalPage() {
                 </div>
               </div>
             </section>
+              </>
+            )}
 
             {/* Consistency & Motivation Scorecard */}
             <article className="mygoal-card">

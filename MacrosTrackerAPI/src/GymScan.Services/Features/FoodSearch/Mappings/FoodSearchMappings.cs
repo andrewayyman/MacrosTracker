@@ -18,7 +18,7 @@ public static class FoodSearchMappings
             ServingSizeGrams: item.TypicalServingSizeGrams);
     }
 
-    public static RecentFoodDto ToRecentFoodDto(this LocalFoodItem item, decimal lastServingSizeGrams)
+    public static RecentFoodDto ToRecentFoodDto(this LocalFoodItem item, decimal lastServingSizeGrams, string? imagePath, DateTime lastUsedAt)
     {
         var multiplier = item.TypicalServingSizeGrams / 100m;
         return new RecentFoodDto(
@@ -29,6 +29,8 @@ public static class FoodSearchMappings
             CarbsPerServing: Math.Round(item.CarbsPer100g * multiplier, 1),
             FatPerServing: Math.Round(item.FatPer100g * multiplier, 1),
             ServingSizeGrams: item.TypicalServingSizeGrams,
-            LastServingSizeGrams: lastServingSizeGrams);
+            LastServingSizeGrams: lastServingSizeGrams,
+            ImagePath: imagePath,
+            LastUsedAt: lastUsedAt);
     }
 }

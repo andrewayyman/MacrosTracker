@@ -7,13 +7,12 @@ import HistoryPage from "./pages/History";
 import HomePage from "./pages/Home";
 import LoadingPage from "./pages/Loading";
 import LoginPage from "./pages/Login";
-import ManualLogPage from "./pages/ManualLog";
+import AddMealPage from "./pages/AddMeal";
 import MyGoalPage from "./pages/MyGoal";
 import NotFoundPage from "./pages/NotFound";
 import ProfileSetupPage from "./pages/ProfileSetup";
 import ProgressPage from "./pages/Progress";
 import RegisterPage from "./pages/Register";
-import ScanPage from "./pages/Scan";
 import DashboardLayout from "./layouts/DashboardLayout";
 import PublicLayout from "./layouts/PublicLayout";
 
@@ -39,9 +38,9 @@ function App() {
         <Route path="/goal-setup" element={<GoalSetupPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/my-goal" element={<MyGoalPage />} />
-        <Route path="/scan" element={<ScanPage />} />
+        <Route path="/scan" element={<Navigate to="/log" replace />} />
         <Route path="/history" element={<HistoryPage />} />
-        <Route path="/log" element={<ManualLogPage />} />
+        <Route path="/log" element={<AddMealPage />} />
         <Route path="/progress" element={<ProgressPage />} />
       </Route>
 

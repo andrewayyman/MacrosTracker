@@ -1,12 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Target, Camera, History, TrendingUp, Search } from "lucide-react";
+import { LayoutDashboard, Target, History, TrendingUp, Plus } from "lucide-react";
 
 export default function Sidebar() {
   const navItems = [
     { to: "/dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
     { to: "/my-goal", label: "My Goals", icon: <Target size={20} /> },
-    { to: "/scan", label: "Scan Food", icon: <Camera size={20} /> },
-    { to: "/log", label: "Log Food", icon: <Search size={20} /> },
+    { to: "/log", label: "Add Meal", icon: <Plus size={20} /> },
     { to: "/history", label: "History", icon: <History size={20} /> },
     { to: "/progress", label: "Progress", icon: <TrendingUp size={20} /> },
   ];
