@@ -1,0 +1,15 @@
+# Normalize all text files to LF on commit, checkout native line endings locally
+* text=auto
+
+# Force files that should always be LF (e.g. frontend files)
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+
+# Force files that should always be CRLF (e.g. Windows/.NET specific files)
+*.sln text eol=crlf
+*.slnx text eol=crlf
+*.csproj text eol=crlf
+*.cs text eol=crlf
